@@ -272,10 +272,11 @@
         .site-nav {
           top: 18px;
           left: 18px;
-          right: 18px;
-          flex-direction: row;
-          flex-wrap: wrap;
-          gap: 10px 16px;
+          right: auto;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          gap: 10px;
+          align-items: flex-start;
         }
 
         .nav-button {
@@ -301,8 +302,8 @@
         .site-nav {
           top: 14px;
           left: 14px;
-          right: 14px;
-          gap: 8px 12px;
+          right: auto;
+          gap: 8px;
         }
 
         .nav-button {
@@ -883,9 +884,6 @@
           button.innerHTML = `
             <span class="projects-node-title">${entry.title}</span>
           `;
-          button.addEventListener("pointerdown", (event) => {
-            event.stopPropagation();
-          });
           button.addEventListener("click", () => {
             if (state.didDialDrag) return;
             if (entry.ringIndex !== state.activeRingIndex) {
@@ -920,7 +918,6 @@
 
       function handleDialPointerDown(event) {
         if (state.activeSection !== "projects") return;
-        if (event.target.closest(".projects-node")) return;
 
         state.isDialDragging = true;
         state.didDialDrag = false;
