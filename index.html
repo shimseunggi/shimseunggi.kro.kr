@@ -5,129 +5,1236 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Halftone Background</title>
     <style>
+      @import url("https://cdn.jsdelivr.net/npm/pretendard/dist/web/static/pretendard.css");
+
       :root {
-        color-scheme: light dark;
-        --overlay: rgba(0, 0, 0, 0.45);
+        color-scheme: dark;
+        --nav-dark: rgba(0, 0, 0, 0.62);
+        --nav-dark-active: #000000;
+        --nav-dark-hover: rgba(0, 0, 0, 0.84);
+        --nav-light: rgba(255, 255, 255, 0.72);
+        --nav-light-active: #ffffff;
+        --nav-light-hover: rgba(255, 255, 255, 0.92);
       }
 
-      * {
-        box-sizing: border-box;
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #fff;
       }
 
       body {
-        margin: 0;
-        min-height: 100vh;
+        position: relative;
+        font-family: "Pretendard", "Helvetica Neue", "Arial Nova", Arial, sans-serif;
+      }
+
+      svg {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .site-nav {
+        position: fixed;
+        top: 44px;
+        left: 48px;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 26px;
+      }
+
+      .nav-button {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--nav-dark);
+        font: inherit;
+        font-size: clamp(1.6rem, 2.1vw, 2.2rem);
+        font-weight: 400;
+        letter-spacing: -0.03em;
+        cursor: pointer;
+        transition: color 180ms ease, transform 180ms ease, opacity 180ms ease;
+        text-shadow:
+          0 1px 10px rgba(255, 255, 255, 0.18),
+          0 1px 10px rgba(0, 0, 0, 0.18);
+      }
+
+      .nav-button:hover,
+      .nav-button:focus-visible {
+        transform: translateX(4px);
+        outline: none;
+      }
+
+      .nav-button[data-contrast="dark"] {
+        color: var(--nav-dark);
+      }
+
+      .nav-button[data-contrast="dark"]:hover,
+      .nav-button[data-contrast="dark"]:focus-visible {
+        color: var(--nav-dark-hover);
+      }
+
+      .nav-button[data-contrast="dark"][aria-current="page"] {
+        color: var(--nav-dark-active);
+      }
+
+      .nav-button[data-contrast="light"] {
+        color: var(--nav-light);
+      }
+
+      .nav-button[data-contrast="light"]:hover,
+      .nav-button[data-contrast="light"]:focus-visible {
+        color: var(--nav-light-hover);
+      }
+
+      .nav-button[data-contrast="light"][aria-current="page"] {
+        color: var(--nav-light-active);
+      }
+
+      .projects-orbit {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 260ms ease;
+      }
+
+      .projects-orbit.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .projects-dial {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        width: min(112vh, 118vw);
+        aspect-ratio: 1;
+        transform: translate(50%, -50%);
+        border-radius: 50%;
+        touch-action: none;
+        cursor: grab;
+        outline: none;
+      }
+
+      .projects-orbit.is-dragging .projects-dial {
+        cursor: grabbing;
+      }
+
+      .projects-node {
+        position: absolute;
+        width: max-content;
+        max-width: min(28vw, 360px);
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #111111;
+        text-align: right;
+        cursor: pointer;
+        transition:
+          left 360ms cubic-bezier(0.22, 1, 0.36, 1),
+          top 360ms cubic-bezier(0.22, 1, 0.36, 1),
+          transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 220ms ease;
+      }
+
+      .projects-orbit.is-dragging .projects-node {
+        transition: none;
+      }
+
+      .projects-node:hover,
+      .projects-node:focus-visible {
+        outline: none;
+      }
+
+      .projects-node.is-active {
+        opacity: 1;
+      }
+
+      .projects-node[data-contrast="dark"] {
+        color: rgba(17, 17, 17, 0.9);
+        text-shadow:
+          0 1px 10px rgba(255, 255, 255, 0.24),
+          0 1px 8px rgba(255, 255, 255, 0.12);
+      }
+
+      .projects-node[data-contrast="light"] {
+        color: rgba(255, 255, 255, 0.94);
+        text-shadow:
+          0 1px 10px rgba(0, 0, 0, 0.24),
+          0 1px 8px rgba(0, 0, 0, 0.12);
+      }
+
+      .projects-node-title {
+        display: block;
+        font-size: clamp(1.32rem, 2.15vw, 2.72rem);
+        font-weight: 600;
+        letter-spacing: -0.06em;
+        line-height: 0.92;
+        white-space: nowrap;
+      }
+
+      .sticker-stage {
+        position: fixed;
+        inset: 0;
+        z-index: 4;
         display: grid;
         place-items: center;
-        font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
-        background-color: #111;
-        background-position: center;
-        background-size: cover;
-        background-repeat: no-repeat;
+        pointer-events: none;
+        opacity: 0;
+        background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+        transition: opacity 180ms ease;
       }
 
-      .panel {
-        width: min(560px, calc(100vw - 2rem));
-        padding: 1.25rem;
-        border-radius: 16px;
-        background: color-mix(in srgb, var(--overlay), transparent 25%);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+      .sticker-stage.is-active {
+        opacity: 1;
+        pointer-events: auto;
       }
 
-      h1 {
-        margin-top: 0;
-        margin-bottom: 0.6rem;
-        font-size: 1.2rem;
+      .sticker-burst {
+        position: relative;
+        perspective: 1400px;
+        width: min(34vw, 360px);
+        aspect-ratio: 1;
       }
 
-      p {
-        margin: 0 0 1rem;
-        line-height: 1.5;
+      .sticker-card {
+        position: absolute;
+        inset: 0;
+        display: block;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        transform-style: preserve-3d;
+        transform:
+          rotateX(var(--sticker-rotate-x, 0deg))
+          rotateY(var(--sticker-rotate-y, 0deg))
+          scale(var(--sticker-scale, 0.74));
+        opacity: 0;
+        cursor: pointer;
+        will-change: transform;
+        transition: transform 140ms ease;
       }
 
-      input[type="file"] {
+      .sticker-stage.is-active .sticker-card {
+        animation: sticker-pop 620ms cubic-bezier(0.2, 1, 0.2, 1) forwards;
+      }
+
+      .sticker-image {
         width: 100%;
-        padding: 0.6rem;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.08);
+        height: 100%;
+        object-fit: contain;
+        user-select: none;
+        -webkit-user-drag: none;
+        transform: translateZ(24px) scale(0.94);
+        filter: drop-shadow(0 28px 42px rgba(0, 0, 0, 0.22));
       }
 
-      .hint {
-        margin-top: 0.75rem;
-        opacity: 0.85;
-        font-size: 0.9rem;
+      @keyframes sticker-pop {
+        0% {
+          opacity: 0;
+          transform:
+            rotateX(var(--sticker-rotate-x, 0deg))
+            rotateY(var(--sticker-rotate-y, 0deg))
+            scale(0.74);
+        }
+
+        56% {
+          opacity: 1;
+          transform:
+            rotateX(var(--sticker-rotate-x, 0deg))
+            rotateY(var(--sticker-rotate-y, 0deg))
+            scale(1.04);
+        }
+
+        100% {
+          opacity: 1;
+          transform:
+            rotateX(var(--sticker-rotate-x, 0deg))
+            rotateY(var(--sticker-rotate-y, 0deg))
+            scale(1);
+        }
+      }
+
+      @media (max-width: 900px) {
+        .site-nav {
+          top: 18px;
+          left: 18px;
+          right: 18px;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 10px 16px;
+        }
+
+        .nav-button {
+          font-size: clamp(1rem, 4.8vw, 1.18rem);
+          line-height: 1.1;
+        }
+
+        .projects-dial {
+          top: 56%;
+          width: min(98vh, 132vw);
+        }
+
+        .projects-node {
+          max-width: min(36vw, 260px);
+        }
+
+        .sticker-burst {
+          width: min(44vw, 300px);
+        }
+      }
+
+      @media (max-width: 520px) {
+        .site-nav {
+          top: 14px;
+          left: 14px;
+          right: 14px;
+          gap: 8px 12px;
+        }
+
+        .nav-button {
+          font-size: 0.98rem;
+        }
+
+        .projects-dial {
+          top: 60%;
+          width: 150vw;
+        }
+
+        .projects-node {
+          max-width: min(42vw, 230px);
+        }
+
+        .projects-node-title {
+          font-size: clamp(1rem, 4.8vw, 1.62rem);
+        }
+
+        .sticker-burst {
+          width: min(58vw, 240px);
+        }
       }
     </style>
   </head>
   <body>
-    <main class="panel">
+    <svg id="screen" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+    <nav class="site-nav" aria-label="Primary">
+      <button class="nav-button" data-section="home" type="button">Home</button>
+      <button class="nav-button" data-section="projects" type="button">Projects</button>
+      <button class="nav-button" data-section="about" type="button">About</button>
+      <button class="nav-button" data-section="contact" type="button">Contact</button>
+    </nav>
+    <section class="projects-orbit" id="projects-orbit" aria-hidden="true">
+      <div
+        class="projects-dial"
+        id="projects-dial"
+        tabindex="0"
+        role="region"
+        aria-label="Projects dial"
+      ></div>
+    </section>
+    <div class="sticker-stage" id="sticker-stage" aria-hidden="true">
+      <div class="sticker-burst">
+        <button class="sticker-card" id="sticker-card" type="button" aria-label="Close sticker">
+          <img class="sticker-image" id="sticker-image" alt="" />
+        </button>
+      </div>
+    </div>
 
+    <script>
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      const screenSvg = document.querySelector("#screen");
+      const navButtons = [...document.querySelectorAll(".nav-button")];
+      const projectsOrbit = document.querySelector("#projects-orbit");
+      const projectsDial = document.querySelector("#projects-dial");
+      const stickerStage = document.querySelector("#sticker-stage");
+      const stickerCard = document.querySelector("#sticker-card");
+      const stickerImage = document.querySelector("#sticker-image");
+      const workerCanvas = document.createElement("canvas");
+      const workerContext = workerCanvas.getContext("2d");
+
+      const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
+      const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".m4v", ".ogv"];
+      const CONVENTIONAL_MEDIA = [
+        "background/background.mp4",
+        "background/background.webm",
+        "background/background.mov",
+        "background/background.jpg",
+        "background/background.jpeg",
+        "background/background.png",
+        "background/background.webp",
+        "background/background.avif",
+      ];
+      const PROJECTS = [
+        // Fill `homepage` with the real URL you want to open for each project.
+        { title: "geegle", homepage: "https://shimseunggi.github.io/geegle/" },
+        { title: "nura-homepage", homepage: "https://new-nura.pages.dev" },
+        { title: "NOT-visionOS", homepage: "https://shimseunggi.github.io/NOT-visionOS/" },
+        { title: "comet-logo", sticker: "sticker/comet.PNG" },
+        { title: "rocket-ha-nyang", }
+      ];
+      const PROJECT_RING_REPEAT = 6;
+      const PROJECT_RING = Array.from(
+        { length: PROJECTS.length * PROJECT_RING_REPEAT },
+        (_, ringIndex) => {
+          const projectIndex = ringIndex % PROJECTS.length;
+          return {
+            ringIndex,
+            projectIndex,
+            title: PROJECTS[projectIndex].title,
+            homepage: PROJECTS[projectIndex].homepage || "",
+            sticker: PROJECTS[projectIndex].sticker || "",
           };
+        },
+      );
 
-          reader.readAsDataURL(file);
+      const state = {
+        source: null,
+        sourceType: "",
+        sourceUrl: "",
+        activeSection: "",
+        dotNodes: [],
+        frameWidth: 0,
+        frameHeight: 0,
+        lastFrame: null,
+        rafId: 0,
+        lastRenderAt: 0,
+        projectNodes: [],
+        activeProjectIndex: 0,
+        activeRingIndex: 0,
+        dialRotation: 8,
+        isDialDragging: false,
+        didDialDrag: false,
+        dragLastX: 0,
+        dragLastY: 0,
+        dragDistance: 0,
+        dialSnapTimer: 0,
+        stickerVisible: false,
+      };
+
+      const renderConfig = {
+        maxDimension: 1200,
+        dotsPerCell: 12,
+        maxDotScale: 1.1,
+        minDot: 0.85,
+        videoFps: 14,
+      };
+
+      window.addEventListener("beforeunload", cleanupSource);
+      window.addEventListener("resize", () => {
+        updateNavButtonContrast(state.lastFrame);
+        updateProjectDial(true);
+      });
+      window.addEventListener("hashchange", syncNavigationFromHash);
+
+      navButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setActiveSection(button.dataset.section, true);
         });
+      });
+
+      stickerStage.addEventListener("click", () => {
+        hideSticker();
+      });
+      stickerCard.addEventListener("click", () => {
+        hideSticker();
+      });
+      stickerStage.addEventListener("pointermove", handleStickerPointerMove);
+      stickerStage.addEventListener("pointerleave", resetStickerTilt);
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && state.stickerVisible) {
+          hideSticker();
+        }
+      });
+
+      initializeProjectDial();
+      initialize().catch((error) => {
+        console.error(error);
+        paintBlankFrame();
+      });
+
+      async function initialize() {
+        syncNavigationFromHash();
+
+        const candidates = await discoverBackgroundCandidates();
+        const loaded = await loadFirstAvailableMedia(candidates);
+
+        if (!loaded) {
+          paintBlankFrame();
+          return;
+        }
+
+        state.source = loaded.element;
+        state.sourceType = loaded.type;
+        state.sourceUrl = loaded.url;
+
+        if (loaded.type === "video") {
+          try {
+            await loaded.element.play();
+          } catch (error) {
+            console.warn("Video autoplay was blocked.", error);
+          }
+
+          await renderCurrentSource();
+          state.lastRenderAt = performance.now();
+          runVideoLoop();
+          return;
+        }
+
+        await renderCurrentSource();
       }
 
-      function createHalftoneDataUrl(image) {
-        const maxDimension = 1800;
-        const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
-        const width = Math.max(1, Math.round(image.width * scale));
-        const height = Math.max(1, Math.round(image.height * scale));
+      async function discoverBackgroundCandidates() {
+        const discovered = new Set(CONVENTIONAL_MEDIA);
 
-        const sourceCanvas = document.createElement("canvas");
-        sourceCanvas.width = width;
-        sourceCanvas.height = height;
-        const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
-        sourceCtx.drawImage(image, 0, 0, width, height);
+        try {
+          const response = await fetch("background/");
+          if (response.ok) {
+            const html = await response.text();
+            extractMediaLinksFromDirectoryListing(html).forEach((url) => discovered.add(url));
+          }
+        } catch (error) {
+          console.warn("Failed to inspect background directory.", error);
+        }
 
-        const imageData = sourceCtx.getImageData(0, 0, width, height).data;
+        return [...discovered];
+      }
 
-        const output = document.createElement("canvas");
-        output.width = width;
-        output.height = height;
-        const ctx = output.getContext("2d");
+      function extractMediaLinksFromDirectoryListing(html) {
+        const parser = new DOMParser();
+        const documentFragment = parser.parseFromString(html, "text/html");
+        const links = [...documentFragment.querySelectorAll("a[href]")];
 
-        ctx.fillStyle = "#f4f4f4";
-        ctx.fillRect(0, 0, width, height);
+        return links
+          .map((link) => link.getAttribute("href") || "")
+          .filter((href) => isSupportedMediaPath(href))
+          .map((href) => normalizeBackgroundUrl(href));
+      }
 
-        for (let y = 0; y < height; y += dotsPerCell) {
-          for (let x = 0; x < width; x += dotsPerCell) {
-            const brightness = sampleAverageBrightness(imageData, width, height, x, y, dotsPerCell);
-            const darkness = 1 - brightness / 255;
-            if (darkness <= 0.01) continue;
+      function normalizeBackgroundUrl(href) {
+        const cleaned = href.replace(/^\.?\//, "");
+        return cleaned.startsWith("background/") ? cleaned : `background/${cleaned}`;
+      }
 
-            const radius = Math.max(minDot, (dotsPerCell * maxDotScale * darkness) / 2);
-            ctx.beginPath();
-            ctx.fillStyle = "#111";
-            ctx.arc(x + dotsPerCell / 2, y + dotsPerCell / 2, radius, 0, Math.PI * 2);
-            ctx.fill();
+      function isSupportedMediaPath(path) {
+        const normalized = path.toLowerCase();
+        if (!normalized || normalized.endsWith("/")) return false;
+        return [...IMAGE_EXTENSIONS, ...VIDEO_EXTENSIONS].some((extension) =>
+          normalized.endsWith(extension),
+        );
+      }
+
+      async function loadFirstAvailableMedia(candidates) {
+        for (const candidate of candidates) {
+          try {
+            if (isVideoPath(candidate)) {
+              const video = await loadVideo(candidate);
+              return { element: video, type: "video", url: candidate };
+            }
+
+            if (isImagePath(candidate)) {
+              const image = await loadImage(candidate);
+              return { element: image, type: "image", url: candidate };
+            }
+          } catch (error) {
+            console.warn(`Skipping unavailable media: ${candidate}`, error);
           }
         }
 
-        return output.toDataURL("image/webp", 0.92);
+        return null;
       }
 
-      function sampleAverageBrightness(data, width, height, startX, startY, size) {
+      function isImagePath(path) {
+        const normalized = path.toLowerCase();
+        return IMAGE_EXTENSIONS.some((extension) => normalized.endsWith(extension));
+      }
+
+      function isVideoPath(path) {
+        const normalized = path.toLowerCase();
+        return VIDEO_EXTENSIONS.some((extension) => normalized.endsWith(extension));
+      }
+
+      function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          image.decoding = "async";
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+          image.src = url;
+        });
+      }
+
+      function loadVideo(url) {
+        return new Promise((resolve, reject) => {
+          const video = document.createElement("video");
+          video.muted = true;
+          video.loop = true;
+          video.playsInline = true;
+          video.preload = "auto";
+
+          video.onloadeddata = () => resolve(video);
+          video.onerror = () => reject(new Error(`Failed to load video: ${url}`));
+          video.src = url;
+        });
+      }
+
+      function runVideoLoop() {
+        const tick = async (timestamp) => {
+          if (state.sourceType !== "video" || !state.source) return;
+
+          const source = state.source;
+          const shouldRender =
+            timestamp - state.lastRenderAt >= 1000 / renderConfig.videoFps &&
+            source.readyState >= 2 &&
+            !source.paused;
+
+          if (shouldRender) {
+            await renderCurrentSource();
+            state.lastRenderAt = timestamp;
+          }
+
+          state.rafId = window.requestAnimationFrame(tick);
+        };
+
+        state.rafId = window.requestAnimationFrame(tick);
+      }
+
+      function renderCurrentSource() {
+        if (!state.source) return;
+        const frame = createHalftoneFrameData(state.source);
+        state.lastFrame = frame;
+        renderFrameToSvg(frame);
+        updateNavButtonContrast(frame);
+        updateProjectNodeContrast(frame);
+      }
+
+      function createHalftoneFrameData(source) {
+        const dimensions = getSourceDimensions(source);
+        const scale = Math.min(
+          1,
+          renderConfig.maxDimension / Math.max(dimensions.width, dimensions.height),
+        );
+        const width = Math.max(1, Math.round(dimensions.width * scale));
+        const height = Math.max(1, Math.round(dimensions.height * scale));
+
+        workerCanvas.width = width;
+        workerCanvas.height = height;
+        workerContext.clearRect(0, 0, width, height);
+        workerContext.drawImage(source, 0, 0, width, height);
+
+        const imageData = workerContext.getImageData(0, 0, width, height).data;
+        const cols = Math.ceil(width / renderConfig.dotsPerCell);
+        const rows = Math.ceil(height / renderConfig.dotsPerCell);
+        const brightnessGrid = new Array(cols * rows);
+        const dots = [];
+
+        for (let row = 0, y = 0; y < height; row += 1, y += renderConfig.dotsPerCell) {
+          for (let col = 0, x = 0; x < width; col += 1, x += renderConfig.dotsPerCell) {
+            const tone = sampleCellTone(
+              imageData,
+              width,
+              height,
+              x,
+              y,
+              renderConfig.dotsPerCell,
+            );
+            brightnessGrid[row * cols + col] = tone.brightness;
+            const darkness = 1 - tone.brightness / 255;
+            if (darkness <= 0.02) continue;
+
+            const radius = Math.max(
+              renderConfig.minDot,
+              (renderConfig.dotsPerCell * renderConfig.maxDotScale * darkness) / 2,
+            );
+            dots.push({
+              cx: formatNumber(x + renderConfig.dotsPerCell / 2),
+              cy: formatNumber(y + renderConfig.dotsPerCell / 2),
+              r: formatNumber(radius),
+              fill: rgbToCss(tone),
+            });
+          }
+        }
+
+        return {
+          width,
+          height,
+          cols,
+          rows,
+          cellSize: renderConfig.dotsPerCell,
+          brightnessGrid,
+          dots,
+        };
+      }
+
+      function paintBlankFrame() {
+        state.dotNodes = [];
+        state.frameWidth = 1;
+        state.frameHeight = 1;
+        state.lastFrame = null;
+        screenSvg.setAttribute("viewBox", "0 0 1 1");
+        screenSvg.replaceChildren(createSvgRect(1, 1));
+        updateNavButtonContrast(null);
+        updateProjectNodeContrast(null);
+      }
+
+      function syncNavigationFromHash() {
+        const hash = window.location.hash.replace("#", "").toLowerCase();
+        const fallback = navButtons[0]?.dataset.section || "home";
+        const nextSection = navButtons.some((button) => button.dataset.section === hash)
+          ? hash
+          : fallback;
+
+        setActiveSection(nextSection, false);
+      }
+
+      function setActiveSection(section, updateHash) {
+        state.activeSection = section;
+
+        navButtons.forEach((button) => {
+          const isActive = button.dataset.section === section;
+          if (isActive) {
+            button.setAttribute("aria-current", "page");
+            return;
+          }
+
+          button.removeAttribute("aria-current");
+        });
+
+        if (updateHash) {
+          window.location.hash = section;
+        }
+
+        updateSectionPanels();
+      }
+
+      function updateSectionPanels() {
+        const showProjects = state.activeSection === "projects";
+        projectsOrbit.classList.toggle("is-visible", showProjects);
+        projectsOrbit.setAttribute("aria-hidden", String(!showProjects));
+
+        if (!showProjects) return;
+
+        updateProjectDial(true);
+      }
+
+      function renderFrameToSvg(frame) {
+        const needsRebuild =
+          state.frameWidth !== frame.width ||
+          state.frameHeight !== frame.height ||
+          state.dotNodes.length !== frame.dots.length;
+
+        if (needsRebuild) {
+          rebuildSvgFrame(frame);
+          return;
+        }
+
+        for (let index = 0; index < frame.dots.length; index += 1) {
+          state.dotNodes[index].setAttribute("r", String(frame.dots[index].r));
+          state.dotNodes[index].setAttribute("fill", frame.dots[index].fill);
+        }
+      }
+
+      function rebuildSvgFrame(frame) {
+        state.frameWidth = frame.width;
+        state.frameHeight = frame.height;
+        screenSvg.setAttribute("viewBox", `0 0 ${frame.width} ${frame.height}`);
+
+        const fragment = document.createDocumentFragment();
+        fragment.append(createSvgRect(frame.width, frame.height));
+
+        state.dotNodes = frame.dots.map((dot) => {
+          const circle = document.createElementNS(SVG_NS, "circle");
+          circle.setAttribute("cx", String(dot.cx));
+          circle.setAttribute("cy", String(dot.cy));
+          circle.setAttribute("r", String(dot.r));
+          circle.setAttribute("fill", dot.fill);
+          fragment.append(circle);
+          return circle;
+        });
+
+        screenSvg.replaceChildren(fragment);
+      }
+
+      function updateNavButtonContrast(frame) {
+        if (!frame) {
+          navButtons.forEach((button) => button.setAttribute("data-contrast", "dark"));
+          return;
+        }
+
+        navButtons.forEach((button) => {
+          const brightness = sampleBrightnessBehindElement(button, frame);
+          const currentContrast = button.getAttribute("data-contrast") || "dark";
+          const nextContrast = getStableContrastMode(brightness, currentContrast);
+          button.setAttribute("data-contrast", nextContrast);
+        });
+      }
+
+      function updateProjectNodeContrast(frame) {
+        if (!state.projectNodes.length) return;
+
+        if (!frame) {
+          state.projectNodes.forEach((node) => node.setAttribute("data-contrast", "dark"));
+          return;
+        }
+
+        state.projectNodes.forEach((node) => {
+          const brightness = sampleBrightnessBehindElement(node, frame);
+          const currentContrast = node.getAttribute("data-contrast") || "dark";
+          const nextContrast = getStableContrastMode(brightness, currentContrast);
+          node.setAttribute("data-contrast", nextContrast);
+        });
+      }
+
+      function sampleBrightnessBehindElement(element, frame) {
+        const rect = element.getBoundingClientRect();
+        const samplePoints = [
+          [rect.left + rect.width * 0.5, rect.top + rect.height * 0.5],
+          [rect.left + rect.width * 0.2, rect.top + rect.height * 0.5],
+          [rect.left + rect.width * 0.8, rect.top + rect.height * 0.5],
+        ];
+
         let total = 0;
+        let count = 0;
+
+        for (const [clientX, clientY] of samplePoints) {
+          const mapped = mapViewportPointToFrame(clientX, clientY, frame.width, frame.height);
+          if (!mapped) continue;
+
+          total += readBrightnessGrid(frame, mapped.x, mapped.y);
+          count += 1;
+        }
+
+        return count > 0 ? total / count : 255;
+      }
+
+      function mapViewportPointToFrame(clientX, clientY, frameWidth, frameHeight) {
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const sourceAspect = frameWidth / frameHeight;
+        const viewportAspect = viewportWidth / viewportHeight;
+
+        let drawWidth = viewportWidth;
+        let drawHeight = viewportHeight;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (sourceAspect > viewportAspect) {
+          drawHeight = viewportHeight;
+          drawWidth = drawHeight * sourceAspect;
+          offsetX = (viewportWidth - drawWidth) / 2;
+        } else {
+          drawWidth = viewportWidth;
+          drawHeight = drawWidth / sourceAspect;
+          offsetY = (viewportHeight - drawHeight) / 2;
+        }
+
+        const frameX = ((clientX - offsetX) / drawWidth) * frameWidth;
+        const frameY = ((clientY - offsetY) / drawHeight) * frameHeight;
+
+        if (frameX < 0 || frameX > frameWidth || frameY < 0 || frameY > frameHeight) {
+          return null;
+        }
+
+        return { x: frameX, y: frameY };
+      }
+
+      function readBrightnessGrid(frame, x, y) {
+        const col = clamp(Math.floor(x / frame.cellSize), 0, frame.cols - 1);
+        const row = clamp(Math.floor(y / frame.cellSize), 0, frame.rows - 1);
+        const index = row * frame.cols + col;
+        return frame.brightnessGrid[index] ?? 255;
+      }
+
+      function getStableContrastMode(brightness, currentContrast) {
+        const lowerThreshold = 112;
+        const upperThreshold = 168;
+
+        if (currentContrast === "light") {
+          return brightness > upperThreshold ? "dark" : "light";
+        }
+
+        return brightness < lowerThreshold ? "light" : "dark";
+      }
+
+      function initializeProjectDial() {
+        state.projectNodes = PROJECT_RING.map((entry) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "projects-node";
+          if (entry.homepage) {
+            button.setAttribute("data-has-homepage", "true");
+            button.title = entry.homepage;
+          }
+          if (entry.sticker) {
+            button.setAttribute("data-has-sticker", "true");
+          }
+          button.innerHTML = `
+            <span class="projects-node-title">${entry.title}</span>
+          `;
+          button.addEventListener("pointerdown", (event) => {
+            event.stopPropagation();
+          });
+          button.addEventListener("click", () => {
+            if (state.didDialDrag) return;
+            if (entry.ringIndex !== state.activeRingIndex) {
+              snapDialToRingIndex(entry.ringIndex);
+              return;
+            }
+            if (entry.homepage) {
+              openProjectHomepage(entry.homepage);
+              return;
+            }
+            if (entry.sticker) {
+              showSticker(entry.sticker, entry.title);
+              return;
+            }
+            snapDialToRingIndex(entry.ringIndex);
+          });
+          projectsDial.append(button);
+          return button;
+        });
+
+        projectsDial.addEventListener("pointerdown", handleDialPointerDown);
+        projectsDial.addEventListener("pointermove", handleDialPointerMove);
+        projectsDial.addEventListener("pointerup", handleDialPointerUp);
+        projectsDial.addEventListener("pointercancel", handleDialPointerUp);
+        projectsDial.addEventListener("lostpointercapture", handleDialPointerUp);
+        projectsDial.addEventListener("wheel", handleDialWheel, { passive: false });
+        projectsDial.addEventListener("keydown", handleDialKeydown);
+
+        updateProjectDial(true);
+      }
+
+      function handleDialPointerDown(event) {
+        if (state.activeSection !== "projects") return;
+        if (event.target.closest(".projects-node")) return;
+
+        state.isDialDragging = true;
+        state.didDialDrag = false;
+        state.dragLastX = event.clientX;
+        state.dragLastY = event.clientY;
+        state.dragDistance = 0;
+        stopDialSnapTimer();
+        projectsOrbit.classList.add("is-dragging");
+        projectsDial.setPointerCapture(event.pointerId);
+      }
+
+      function handleDialPointerMove(event) {
+        if (!state.isDialDragging) return;
+
+        const geometry = getDialGeometry();
+        if (!geometry) return;
+
+        const deltaX = event.clientX - state.dragLastX;
+        const deltaY = event.clientY - state.dragLastY;
+        state.dragLastX = event.clientX;
+        state.dragLastY = event.clientY;
+        state.dragDistance += Math.hypot(deltaX, deltaY);
+
+        const fromCenterX = event.clientX - geometry.centerX;
+        const fromCenterY = event.clientY - geometry.centerY;
+        const tangentX = -fromCenterY;
+        const tangentY = fromCenterX;
+        const tangentLength = Math.hypot(tangentX, tangentY) || 1;
+        const projectedDelta =
+          deltaX * (tangentX / tangentLength) + deltaY * (tangentY / tangentLength);
+        const rotationDelta =
+          ((projectedDelta / Math.max(geometry.radius, 1)) * 180 * 1.35) / Math.PI;
+
+        state.dialRotation += rotationDelta;
+        state.didDialDrag = state.dragDistance > 6;
+        updateProjectDial();
+      }
+
+      function handleDialPointerUp(event) {
+        if (!state.isDialDragging) return;
+
+        state.isDialDragging = false;
+        projectsOrbit.classList.remove("is-dragging");
+        if (event?.pointerId != null && projectsDial.hasPointerCapture(event.pointerId)) {
+          projectsDial.releasePointerCapture(event.pointerId);
+        }
+
+        snapDialToNearestProject();
+        window.setTimeout(() => {
+          state.didDialDrag = false;
+        }, 0);
+      }
+
+      function handleDialWheel(event) {
+        if (state.activeSection !== "projects") return;
+
+        event.preventDefault();
+        stopDialSnapTimer();
+        const modeScale =
+          event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+        const rotationDelta = event.deltaY * modeScale * 0.038;
+
+        if (Math.abs(rotationDelta) < 0.2) return;
+
+        state.dialRotation -= rotationDelta;
+        updateProjectDial();
+        scheduleDialSnap();
+      }
+
+      function handleDialKeydown(event) {
+        if (state.activeSection !== "projects") return;
+
+        if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+          return;
+        }
+
+        event.preventDefault();
+        const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
+        snapDialToRingIndex(modulo(state.activeRingIndex + direction, PROJECT_RING.length));
+      }
+
+      function updateProjectDial(instant = false) {
+        if (!state.projectNodes.length) return;
+
+        const rect = projectsDial.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const radius = Math.min(rect.width, rect.height) * (window.innerWidth > 900 ? 0.42 : 0.35);
+        const angleStep = 360 / PROJECT_RING.length;
+        const focusAngle = 180;
+        let closestRingIndex = state.activeRingIndex;
+        let closestDistance = Infinity;
+
+        state.projectNodes.forEach((node, index) => {
+          const angle = normalizeAngle(state.dialRotation + angleStep * index);
+          const radians = (angle * Math.PI) / 180;
+          const frontness = (Math.cos(((angle - focusAngle) * Math.PI) / 180) + 1) / 2;
+          const x = centerX + radius * Math.cos(radians);
+          const y = centerY + radius * Math.sin(radians);
+          const scale = 0.7 + frontness * 0.48;
+          const opacity = 0.14 + frontness * 0.82;
+          const distance = angularDistance(angle, focusAngle);
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestRingIndex = index;
+          }
+
+          node.style.left = `${x}px`;
+          node.style.top = `${y}px`;
+          node.style.opacity = String(opacity);
+          node.style.visibility = "visible";
+          node.style.pointerEvents = "auto";
+          node.style.transform = `translate(-50%, -50%) scale(${scale.toFixed(3)})`;
+          node.style.zIndex = String(Math.round(frontness * 100));
+          node.classList.toggle("is-active", index === closestRingIndex);
+
+          if (instant) {
+            node.getBoundingClientRect();
+          }
+        });
+
+        state.activeRingIndex = closestRingIndex;
+        state.activeProjectIndex = PROJECT_RING[closestRingIndex]?.projectIndex ?? 0;
+        state.projectNodes.forEach((node, index) => {
+          node.classList.toggle("is-active", index === closestRingIndex);
+        });
+        updateProjectNodeContrast(state.lastFrame);
+      }
+
+      function snapDialToNearestProject() {
+        snapDialToRingIndex(state.activeRingIndex);
+      }
+
+      function snapDialToRingIndex(ringIndex) {
+        const normalizedRingIndex = modulo(ringIndex, PROJECT_RING.length);
+        const angleStep = 360 / PROJECT_RING.length;
+        const targetRotation = closestEquivalentRotation(
+          180 - angleStep * normalizedRingIndex,
+          state.dialRotation,
+        );
+        state.dialRotation = targetRotation;
+        state.activeRingIndex = normalizedRingIndex;
+        state.activeProjectIndex = PROJECT_RING[normalizedRingIndex]?.projectIndex ?? 0;
+        updateProjectDial();
+      }
+
+      function openProjectHomepage(homepage) {
+        if (!homepage) return;
+        window.open(homepage, "_blank", "noopener,noreferrer");
+      }
+
+      function showSticker(path, title) {
+        if (!path) return;
+
+        stickerImage.src = path;
+        stickerImage.alt = `${title} sticker`;
+        resetStickerTilt();
+        stickerStage.classList.remove("is-active");
+        void stickerStage.offsetWidth;
+        stickerStage.classList.add("is-active");
+        stickerStage.setAttribute("aria-hidden", "false");
+        state.stickerVisible = true;
+      }
+
+      function hideSticker() {
+        stickerStage.classList.remove("is-active");
+        stickerStage.setAttribute("aria-hidden", "true");
+        state.stickerVisible = false;
+        resetStickerTilt();
+      }
+
+      function handleStickerPointerMove(event) {
+        const px = clamp(event.clientX / window.innerWidth, 0, 1);
+        const py = clamp(event.clientY / window.innerHeight, 0, 1);
+        const rotateY = (px - 0.5) * 20;
+        const rotateX = (0.5 - py) * 18;
+
+        stickerCard.style.setProperty("--sticker-rotate-x", `${rotateX.toFixed(2)}deg`);
+        stickerCard.style.setProperty("--sticker-rotate-y", `${rotateY.toFixed(2)}deg`);
+      }
+
+      function resetStickerTilt() {
+        stickerCard.style.setProperty("--sticker-rotate-x", "0deg");
+        stickerCard.style.setProperty("--sticker-rotate-y", "0deg");
+        stickerCard.style.setProperty("--sticker-scale", "1");
+      }
+
+      function scheduleDialSnap() {
+        stopDialSnapTimer();
+        state.dialSnapTimer = window.setTimeout(() => {
+          snapDialToNearestProject();
+          state.dialSnapTimer = 0;
+        }, 120);
+      }
+
+      function stopDialSnapTimer() {
+        if (!state.dialSnapTimer) return;
+        window.clearTimeout(state.dialSnapTimer);
+        state.dialSnapTimer = 0;
+      }
+
+      function getDialGeometry() {
+        const rect = projectsDial.getBoundingClientRect();
+        if (!rect.width || !rect.height) return null;
+
+        return {
+          rect,
+          centerX: rect.left + rect.width / 2,
+          centerY: rect.top + rect.height / 2,
+          radius: Math.min(rect.width, rect.height) * (window.innerWidth > 900 ? 0.42 : 0.35),
+        };
+      }
+
+      function normalizeAngle(angle) {
+        let normalized = angle % 360;
+        if (normalized > 180) normalized -= 360;
+        if (normalized < -180) normalized += 360;
+        return normalized;
+      }
+
+      function angularDistance(a, b) {
+        return Math.abs(normalizeAngle(a - b));
+      }
+
+      function closestEquivalentRotation(target, current) {
+        let candidate = target;
+        while (candidate - current > 180) candidate -= 360;
+        while (candidate - current < -180) candidate += 360;
+        return candidate;
+      }
+
+      function modulo(value, length) {
+        return ((value % length) + length) % length;
+      }
+
+      function createSvgRect(width, height) {
+        const rect = document.createElementNS(SVG_NS, "rect");
+        rect.setAttribute("width", String(width));
+        rect.setAttribute("height", String(height));
+        rect.setAttribute("fill", "#ffffff");
+        return rect;
+      }
+
+      function getSourceDimensions(source) {
+        if (source instanceof HTMLVideoElement) {
+          return {
+            width: source.videoWidth || source.clientWidth || 1,
+            height: source.videoHeight || source.clientHeight || 1,
+          };
+        }
+
+        return {
+          width: source.naturalWidth || source.width || 1,
+          height: source.naturalHeight || source.height || 1,
+        };
+      }
+
+      function sampleCellTone(data, width, height, startX, startY, size) {
+        let totalBrightness = 0;
+        let totalR = 0;
+        let totalG = 0;
+        let totalB = 0;
         let count = 0;
 
         const endX = Math.min(startX + size, width);
         const endY = Math.min(startY + size, height);
 
-        for (let y = startY; y < endY; y++) {
-          for (let x = startX; x < endX; x++) {
-            const idx = (y * width + x) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            total += 0.299 * r + 0.587 * g + 0.114 * b;
-            count++;
+        for (let y = startY; y < endY; y += 1) {
+          for (let x = startX; x < endX; x += 1) {
+            const index = (y * width + x) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            totalBrightness += 0.299 * r + 0.587 * g + 0.114 * b;
+            totalR += r;
+            totalG += g;
+            totalB += b;
+            count += 1;
           }
         }
 
-        return count ? total / count : 255;
+        if (count === 0) {
+          return { brightness: 255, r: 255, g: 255, b: 255 };
+        }
+
+        return {
+          brightness: totalBrightness / count,
+          r: totalR / count,
+          g: totalG / count,
+          b: totalB / count,
+        };
+      }
+
+      function formatNumber(value) {
+        return Number(value.toFixed(2));
+      }
+
+      function rgbToCss(color) {
+        return `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function cleanupSource() {
+        stopDialSnapTimer();
+
+        if (state.rafId) {
+          window.cancelAnimationFrame(state.rafId);
+        }
+
+        if (state.sourceType === "video" && state.source) {
+          state.source.pause();
+          state.source.removeAttribute("src");
+          state.source.load();
+        }
+
       }
     </script>
   </body>
