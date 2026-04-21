@@ -63,40 +63,7 @@
   </head>
   <body>
     <main class="panel">
-      <h1>Background 이미지 → Halftone 자동 변환</h1>
-      <p>
-        <strong>Background 파일</strong>에 사진을 넣으면 점 패턴(halftone)으로 자동 변환 후
-        웹 페이지 배경으로 적용됩니다.
-      </p>
-      <input id="backgroundInput" type="file" accept="image/*" />
-      <p class="hint">권장: 선명한 대비가 있는 사진 (JPG/PNG/WebP)</p>
-    </main>
 
-    <script>
-      const input = document.getElementById("backgroundInput");
-      const dotsPerCell = 7;
-      const minDot = 0.5;
-      const maxDotScale = 0.95;
-
-      input.addEventListener("change", async (event) => {
-        const [file] = event.target.files || [];
-        if (!file) return;
-
-        const image = await loadImage(file);
-        const dataUrl = createHalftoneDataUrl(image);
-        document.body.style.backgroundImage = `url(${dataUrl})`;
-      });
-
-      function loadImage(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-
-          reader.onerror = () => reject(new Error("파일을 읽을 수 없습니다."));
-          reader.onload = () => {
-            const image = new Image();
-            image.onerror = () => reject(new Error("이미지 로딩에 실패했습니다."));
-            image.onload = () => resolve(image);
-            image.src = reader.result;
           };
 
           reader.readAsDataURL(file);
