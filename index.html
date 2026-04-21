@@ -1382,11 +1382,24 @@
 
       function handleContactDinoPointerDown(event) {
         if (
+          !contactDinoCanvas ||
           state.activeSection !== "contact" ||
           contactDinoState.mode !== "active" ||
-          !contactDinoState.pointer.inside ||
           !contactDinoState.dino
         ) return;
+
+        const rect = contactDinoCanvas.getBoundingClientRect();
+        const inside =
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom;
+
+        contactDinoState.pointer.inside = inside;
+        if (!inside) return;
+
+        contactDinoState.pointer.x = event.clientX - rect.left;
+        contactDinoState.pointer.y = event.clientY - rect.top;
         contactDinoState.pointer.down = true;
         contactDinoState.dino.roar = 1;
       }
@@ -2395,6 +2408,8 @@
       }
 
       function handleLizardPointerDown(event) {
+        lizardState.input.mouse.x = event.clientX;
+        lizardState.input.mouse.y = event.clientY;
         if (event.button === 0) lizardState.input.mouse.left = true;
         if (event.button === 1) lizardState.input.mouse.middle = true;
         if (event.button === 2) lizardState.input.mouse.right = true;
