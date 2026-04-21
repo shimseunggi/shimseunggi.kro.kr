@@ -164,11 +164,15 @@
         height: 290px;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 220ms ease;
+        transform: translate3d(-120px, 0, 0);
+        transition:
+          opacity 260ms ease,
+          transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
       }
 
       .contact-dino-stage.is-visible {
         opacity: 1;
+        transform: translate3d(0, 0, 0);
       }
 
       .contact-dino-canvas {
@@ -595,7 +599,7 @@
         }
       }
     </style>
-  <script type="text/javascript" nonce="e4de729c3a5d4ad69481f644431" src="//local.adguard.org?ts=1776780348016&amp;type=content-script&amp;dmn=chatgpt.com&amp;url=https%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000000134720698853b528085ded0%26ts%3D493550%26p%3Dfs%26cid%3D1%26sig%3Dc89ddd152bca42ba0f4d9aaeb813a90c6003719d8355d73956f1edbb017495b6%26v%3D0&amp;app=com.apple.Safari&amp;css=2&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1&amp;stealth=1&amp;st-push&amp;st-loc&amp;st-java&amp;st-dnt"></script><script type="text/javascript" nonce="e4de729c3a5d4ad69481f644431" src="//local.adguard.org?ts=1776780348016&amp;name=AdGuard%20Extra&amp;type=user-script"></script></head>
+  </head>
   <body data-section="home">
     <svg id="screen" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
     <div class="home-lizard-stage" id="home-lizard-stage" aria-hidden="true">
@@ -765,11 +769,6 @@
         dpr: 1,
         pointer: { x: 0, y: 0, inside: false, down: false },
         dino: null,
-        anchor: { x: 0, y: 0 },
-        parked: { x: 0, y: 0 },
-        mode: "parked",
-        renderVisible: false,
-        visible: false,
         snoutViewport: { x: 0, y: 0 },
         waveRadius: 0,
         rafId: 0,
@@ -1094,6 +1093,8 @@
         });
         contactPanel.classList.toggle("is-visible", showContact);
         contactPanel.setAttribute("aria-hidden", String(!showContact));
+        contactDinoStage.classList.toggle("is-visible", showContact);
+        contactDinoStage.setAttribute("aria-hidden", String(!showContact));
         lizardState.visible = state.activeSection === "home";
         if (showProjects && previousSection !== "projects") {
           state.projectOrbitIntroStartAt = 0;
@@ -1106,7 +1107,6 @@
           projectsOrbit.classList.remove("is-auto-rotating");
         }
         updateHomeLizardState(previousSection);
-        updateContactDinoState(previousSection);
 
         if (!showProjects) return;
 
@@ -1178,111 +1178,6 @@
         }
       }
 
-      function getContactDinoScale(width = contactDinoState.width || 420) {
-        return Math.min(1.75, Math.max(1.28, width / 430));
-      }
-
-      function getContactDinoAnchorPoint() {
-        return {
-          x: Math.max(170, contactDinoState.width * 0.42),
-          y: contactDinoState.height * 0.7,
-        };
-      }
-
-      function getContactDinoParkedPoint() {
-        return {
-          x: -170 * getContactDinoScale(),
-          y: contactDinoState.height * 0.72,
-        };
-      }
-
-      function updateContactDinoAnchors() {
-        const anchorPoint = getContactDinoAnchorPoint();
-        const parkedPoint = getContactDinoParkedPoint();
-        contactDinoState.anchor.x = anchorPoint.x;
-        contactDinoState.anchor.y = anchorPoint.y;
-        contactDinoState.parked.x = parkedPoint.x;
-        contactDinoState.parked.y = parkedPoint.y;
-      }
-
-      function placeContactDino(x, face = 1) {
-        if (!contactDinoState.dino) {
-          contactDinoState.dino = createContactDino();
-        }
-
-        const dino = contactDinoState.dino;
-        dino.scale = getContactDinoScale();
-        dino.x = x;
-        dino.y = dino.groundAt(x) - 46 * dino.scale;
-        dino.vx = 0;
-        dino.vy = 0;
-        dino.face = face;
-        dino.drawFace = face;
-        dino.roar = 0;
-        dino.blink = 0;
-        dino.walk = 0;
-
-        dino.footBackNear = new ContactFootStepper(
-          dino.x - face * 24 * dino.scale,
-          dino.groundAt(dino.x - face * 24 * dino.scale),
-          28 * dino.scale,
-          16 * dino.scale,
-        );
-        dino.footBackFar = new ContactFootStepper(
-          dino.x + face * 12 * dino.scale,
-          dino.groundAt(dino.x + face * 12 * dino.scale),
-          28 * dino.scale,
-          16 * dino.scale,
-        );
-      }
-
-      function updateContactDinoState(previousSection = "") {
-        const showContact = state.activeSection === "contact";
-        contactDinoState.visible = showContact;
-        updateContactDinoAnchors();
-
-        if (!contactDinoState.dino) {
-          contactDinoState.dino = createContactDino();
-          placeContactDino(contactDinoState.parked.x, -1);
-        }
-
-        if (showContact) {
-          contactDinoState.renderVisible = true;
-          contactDinoStage.classList.add("is-visible");
-          contactDinoStage.setAttribute("aria-hidden", "false");
-
-          if (previousSection !== "contact" || contactDinoState.mode === "parked") {
-            placeContactDino(contactDinoState.parked.x, 1);
-            contactDinoState.mode = "entering";
-            contactDinoState.pointer.inside = false;
-            contactDinoState.pointer.down = false;
-            contactDinoState.waveRadius = 0;
-          }
-          return;
-        }
-
-        if (
-          previousSection === "contact" ||
-          contactDinoState.mode === "active" ||
-          contactDinoState.mode === "entering"
-        ) {
-          contactDinoState.renderVisible = true;
-          contactDinoState.mode = "exiting";
-          contactDinoState.pointer.inside = false;
-          contactDinoState.pointer.down = false;
-          contactDinoState.waveRadius = 0;
-          contactDinoStage.classList.add("is-visible");
-          contactDinoStage.setAttribute("aria-hidden", "false");
-          return;
-        }
-
-        if (contactDinoState.mode === "parked") {
-          contactDinoState.renderVisible = false;
-          contactDinoStage.classList.remove("is-visible");
-          contactDinoStage.setAttribute("aria-hidden", "true");
-        }
-      }
-
       function createContactDino() {
         const width = Math.max(280, contactDinoState.width || 420);
         const height = Math.max(140, contactDinoState.height || 220);
@@ -1300,7 +1195,7 @@
           blinkTimer: 1.4,
           footBackNear: null,
           footBackFar: null,
-          scale: getContactDinoScale(width),
+          scale: Math.min(1.75, Math.max(1.28, width / 430)),
         };
 
         const groundAt = (x) =>
@@ -1336,19 +1231,12 @@
         contactDinoCanvas.width = Math.round(width * dpr);
         contactDinoCanvas.height = Math.round(height * dpr);
         contactDinoContext.setTransform(dpr, 0, 0, dpr, 0, 0);
-        updateContactDinoAnchors();
 
         if (!contactDinoState.dino) {
           contactDinoState.dino = createContactDino();
-          placeContactDino(contactDinoState.parked.x, -1);
         } else {
-          contactDinoState.dino.scale = getContactDinoScale(width);
           contactDinoState.dino.groundAt = (x) =>
             height * 0.84 + Math.sin(x * 0.024) * 5 + Math.sin(x * 0.009 + 1.2) * 4;
-
-          if (contactDinoState.mode === "parked" && !contactDinoState.renderVisible) {
-            placeContactDino(contactDinoState.parked.x, -1);
-          }
         }
 
         if (!contactDinoState.pointer.inside) {
@@ -1358,16 +1246,7 @@
       }
 
       function handleContactDinoPointerMove(event) {
-        if (
-          !contactDinoCanvas ||
-          state.activeSection !== "contact" ||
-          !contactDinoState.renderVisible ||
-          contactDinoState.mode !== "active"
-        ) {
-          contactDinoState.pointer.inside = false;
-          return;
-        }
-
+        if (!contactDinoCanvas) return;
         const rect = contactDinoCanvas.getBoundingClientRect();
         const inside =
           event.clientX >= rect.left &&
@@ -1381,12 +1260,7 @@
       }
 
       function handleContactDinoPointerDown(event) {
-        if (
-          state.activeSection !== "contact" ||
-          contactDinoState.mode !== "active" ||
-          !contactDinoState.pointer.inside ||
-          !contactDinoState.dino
-        ) return;
+        if (!contactDinoState.pointer.inside || !contactDinoState.dino) return;
         contactDinoState.pointer.down = true;
         contactDinoState.dino.roar = 1;
       }
@@ -1414,43 +1288,32 @@
           dino.blinkTimer = 1.6 + Math.random() * 2.2;
         }
         dino.blink = Math.max(0, dino.blink - dt * 7);
-        updateContactDinoAnchors();
 
-        let desiredFace = dino.face;
-        let targetX = dino.x;
-        let clampMinX = -220 * dino.scale;
-        let clampMaxX = contactDinoState.width + 220 * dino.scale;
-
-        if (contactDinoState.mode === "entering") {
-          desiredFace = 1;
-          targetX = contactDinoState.anchor.x;
-        } else if (contactDinoState.mode === "exiting" || contactDinoState.mode === "parked") {
-          desiredFace = -1;
-          targetX = contactDinoState.parked.x;
-        } else {
-          const pointerInside = contactDinoState.pointer.inside;
-          const targetSnoutX = pointerInside
-            ? contactDinoState.pointer.x
-            : contactDinoState.anchor.x + 88 * dino.scale + Math.sin(dino.time * 0.9) * 26;
-          desiredFace = Math.abs(targetSnoutX - dino.x) > 6
-            ? targetSnoutX >= dino.x
-              ? 1
-              : -1
-            : dino.face;
-          const snoutOffset = getContactDinoSnoutOffset(desiredFace, dino.scale);
-          targetX = targetSnoutX - snoutOffset.x;
-          const horizontalMargin = 134 * dino.scale;
-          clampMinX = horizontalMargin;
-          clampMaxX = contactDinoState.width - horizontalMargin;
-        }
-
+        const pointerInside = contactDinoState.pointer.inside;
+        const targetSnoutX = pointerInside
+          ? contactDinoState.pointer.x
+          : contactDinoState.width * 0.68 + Math.sin(dino.time * 0.9) * 26;
+        const desiredFace = Math.abs(targetSnoutX - dino.x) > 6
+          ? targetSnoutX >= dino.x
+            ? 1
+            : -1
+          : dino.face;
+        const snoutOffset = getContactDinoSnoutOffset(desiredFace, dino.scale);
+        const targetX = targetSnoutX - snoutOffset.x;
         const dx = targetX - dino.x;
+        const horizontalMargin = 134 * dino.scale;
         const accelX = clampValue(dx * 0.012, -0.92, 0.92);
         dino.vx += accelX;
         dino.vx *= 0.9;
-        dino.x = clampValue(dino.x + dino.vx * 60 * dt, clampMinX, clampMaxX);
+        dino.x = clampValue(
+          dino.x + dino.vx * 60 * dt,
+          horizontalMargin,
+          contactDinoState.width - horizontalMargin,
+        );
 
-        dino.face = desiredFace;
+        if (Math.abs(targetSnoutX - (dino.x + snoutOffset.x)) > 8) {
+          dino.face = desiredFace;
+        }
         dino.drawFace = lerpValue(dino.drawFace, dino.face, 0.16);
 
         const bodyGround = dino.groundAt(dino.x);
@@ -1466,20 +1329,6 @@
         const hipFarX = dino.x + dino.face * 22 * dino.scale;
         dino.footBackNear.update(hipNearX, dino.groundAt(hipNearX), dino.vx * 0.05, dino.face, dt);
         dino.footBackFar.update(hipFarX, dino.groundAt(hipFarX), dino.vx * 0.05, dino.face, dt);
-
-        if (contactDinoState.mode === "entering" && Math.abs(dino.x - contactDinoState.anchor.x) < 16) {
-          contactDinoState.mode = "active";
-        }
-
-        if (contactDinoState.mode === "exiting" && dino.x < contactDinoState.parked.x + 12) {
-          contactDinoState.mode = "parked";
-          contactDinoState.renderVisible = false;
-          contactDinoState.pointer.inside = false;
-          contactDinoState.pointer.down = false;
-          contactDinoState.waveRadius = 0;
-          contactDinoStage.classList.remove("is-visible");
-          contactDinoStage.setAttribute("aria-hidden", "true");
-        }
       }
 
       function drawContactPolyline(points) {
@@ -1628,11 +1477,6 @@
 
         const { width, height } = contactDinoState;
         contactDinoContext.clearRect(0, 0, width, height);
-        if (!contactDinoState.renderVisible) {
-          contactDinoState.waveRadius = 0;
-          return;
-        }
-
         const dino = contactDinoState.dino;
         const scale = dino.scale;
 
