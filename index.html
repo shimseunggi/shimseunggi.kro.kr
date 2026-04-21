@@ -21,9 +21,18 @@
         place-items: center;
         font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
         background-color: #111;
-        background-position: center;
-        background-size: cover;
-        background-repeat: no-repeat;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
+
+      #halftone-background {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        background: #111;
       }
 
       .panel {
@@ -62,73 +71,15 @@
     </style>
   </head>
   <body>
+    <canvas id="halftone-background"></canvas>
+
     <main class="panel">
+      <h1>Halftone Background</h1>
+      <p>이미지 또는 영상을 선택하면 화면 배경을 halftone 스타일로 변환합니다.</p>
+      <input id="media-input" type="file" accept="image/*,video/*" />
+      <p id="status" class="hint">지원 형식: 이미지, MP4/WebM 등 영상</p>
+    </main>
 
-          };
-
-          reader.readAsDataURL(file);
-        });
-      }
-
-      function createHalftoneDataUrl(image) {
-        const maxDimension = 1800;
-        const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
-        const width = Math.max(1, Math.round(image.width * scale));
-        const height = Math.max(1, Math.round(image.height * scale));
-
-        const sourceCanvas = document.createElement("canvas");
-        sourceCanvas.width = width;
-        sourceCanvas.height = height;
-        const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
-        sourceCtx.drawImage(image, 0, 0, width, height);
-
-        const imageData = sourceCtx.getImageData(0, 0, width, height).data;
-
-        const output = document.createElement("canvas");
-        output.width = width;
-        output.height = height;
-        const ctx = output.getContext("2d");
-
-        ctx.fillStyle = "#f4f4f4";
-        ctx.fillRect(0, 0, width, height);
-
-        for (let y = 0; y < height; y += dotsPerCell) {
-          for (let x = 0; x < width; x += dotsPerCell) {
-            const brightness = sampleAverageBrightness(imageData, width, height, x, y, dotsPerCell);
-            const darkness = 1 - brightness / 255;
-            if (darkness <= 0.01) continue;
-
-            const radius = Math.max(minDot, (dotsPerCell * maxDotScale * darkness) / 2);
-            ctx.beginPath();
-            ctx.fillStyle = "#111";
-            ctx.arc(x + dotsPerCell / 2, y + dotsPerCell / 2, radius, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-
-        return output.toDataURL("image/webp", 0.92);
-      }
-
-      function sampleAverageBrightness(data, width, height, startX, startY, size) {
-        let total = 0;
-        let count = 0;
-
-        const endX = Math.min(startX + size, width);
-        const endY = Math.min(startY + size, height);
-
-        for (let y = startY; y < endY; y++) {
-          for (let x = startX; x < endX; x++) {
-            const idx = (y * width + x) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            total += 0.299 * r + 0.587 * g + 0.114 * b;
-            count++;
-          }
-        }
-
-        return count ? total / count : 255;
-      }
-    </script>
+    <script type="module" src="./Background.js"></script>
   </body>
 </html>
