@@ -178,6 +178,8 @@
         letter-spacing: -0.06em;
         line-height: 0.92;
         white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
       }
 
       .sticker-stage {
@@ -905,6 +907,7 @@
         projectsDial.addEventListener("pointerup", handleDialPointerUp);
         projectsDial.addEventListener("pointercancel", handleDialPointerUp);
         projectsDial.addEventListener("lostpointercapture", handleDialPointerUp);
+        projectsOrbit.addEventListener("wheel", handleDialWheel, { passive: false });
         projectsDial.addEventListener("wheel", handleDialWheel, { passive: false });
         projectsDial.addEventListener("keydown", handleDialKeydown);
 
@@ -974,11 +977,12 @@
         stopDialSnapTimer();
         const modeScale =
           event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
-        const rotationDelta = event.deltaY * modeScale * 0.038;
+        const primaryDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+        const rotationDelta = primaryDelta * modeScale * 0.038;
 
         if (Math.abs(rotationDelta) < 0.2) return;
 
-        state.dialRotation -= rotationDelta;
+        state.dialRotation += rotationDelta;
         updateProjectDial();
         scheduleDialSnap();
       }
