@@ -148,6 +148,10 @@
         transition: none;
       }
 
+      .projects-orbit.is-wheel-scrolling .projects-node {
+        transition: none;
+      }
+
       .projects-node:hover,
       .projects-node:focus-visible {
         outline: none;
@@ -416,7 +420,7 @@
         dragLastX: 0,
         dragLastY: 0,
         dragDistance: 0,
-        dialSnapTimer: 0,
+        wheelIdleTimer: 0,
         stickerVisible: false,
       };
 
@@ -923,7 +927,6 @@
         state.dragLastX = event.clientX;
         state.dragLastY = event.clientY;
         state.dragDistance = 0;
-        stopDialSnapTimer();
         projectsOrbit.classList.add("is-dragging");
         projectsDial.setPointerCapture(event.pointerId);
       }
@@ -974,7 +977,7 @@
         if (state.activeSection !== "projects") return;
 
         event.preventDefault();
-        stopDialSnapTimer();
+        beginWheelScrolling();
         const modeScale =
           event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
         const primaryDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
@@ -984,7 +987,7 @@
 
         state.dialRotation += rotationDelta;
         updateProjectDial();
-        scheduleDialSnap();
+        scheduleWheelSnap();
       }
 
       function handleDialKeydown(event) {
@@ -1108,18 +1111,21 @@
         stickerCard.style.setProperty("--sticker-scale", "1");
       }
 
-      function scheduleDialSnap() {
-        stopDialSnapTimer();
-        state.dialSnapTimer = window.setTimeout(() => {
-          snapDialToNearestProject();
-          state.dialSnapTimer = 0;
-        }, 120);
+      function beginWheelScrolling() {
+        projectsOrbit.classList.add("is-wheel-scrolling");
       }
 
-      function stopDialSnapTimer() {
-        if (!state.dialSnapTimer) return;
-        window.clearTimeout(state.dialSnapTimer);
-        state.dialSnapTimer = 0;
+      function scheduleWheelSnap() {
+        if (state.wheelIdleTimer) {
+          window.clearTimeout(state.wheelIdleTimer);
+          state.wheelIdleTimer = 0;
+        }
+
+        state.wheelIdleTimer = window.setTimeout(() => {
+          projectsOrbit.classList.remove("is-wheel-scrolling");
+          snapDialToNearestProject();
+          state.wheelIdleTimer = 0;
+        }, 220);
       }
 
       function getDialGeometry() {
@@ -1227,7 +1233,10 @@
       }
 
       function cleanupSource() {
-        stopDialSnapTimer();
+        if (state.wheelIdleTimer) {
+          window.clearTimeout(state.wheelIdleTimer);
+          state.wheelIdleTimer = 0;
+        }
 
         if (state.rafId) {
           window.cancelAnimationFrame(state.rafId);
