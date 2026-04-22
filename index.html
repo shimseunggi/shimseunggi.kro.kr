@@ -915,7 +915,7 @@
         projectContrastSampleAt: 0,
         projectContrastInterval: 140,
         projectDialLayout: null,
-        idleProjectRotationSpeed: 0.48,
+        idleProjectRotationSpeed: 0.72,
         pendingProjectRingIndex: -1,
         pendingProjectPointerId: null,
         stickerVisible: false,
@@ -3522,6 +3522,14 @@
             if (event.detail !== 0) return;
             activateProjectEntry(entry);
           });
+          button._dialRenderState = {
+            left: "",
+            top: "",
+            opacity: "",
+            transform: "",
+            zIndex: "",
+            active: false,
+          };
           projectsDial.append(button);
           return button;
         });
@@ -3658,6 +3666,52 @@
         snapDialToRingIndex(modulo(state.activeRingIndex + direction, PROJECT_RING.length));
       }
 
+      function applyProjectNodeRender(node, { left, top, opacity, transform, zIndex, isActive }) {
+        const renderState =
+          node._dialRenderState ||
+          (node._dialRenderState = {
+            left: "",
+            top: "",
+            opacity: "",
+            transform: "",
+            zIndex: "",
+            active: false,
+          });
+
+        if (renderState.left !== left) {
+          node.style.left = left;
+          renderState.left = left;
+        }
+
+        if (renderState.top !== top) {
+          node.style.top = top;
+          renderState.top = top;
+        }
+
+        if (renderState.opacity !== opacity) {
+          node.style.opacity = opacity;
+          renderState.opacity = opacity;
+        }
+
+        if (renderState.transform !== transform) {
+          node.style.transform = transform;
+          renderState.transform = transform;
+        }
+
+        if (renderState.zIndex !== zIndex) {
+          node.style.zIndex = zIndex;
+          renderState.zIndex = zIndex;
+        }
+
+        if (renderState.active !== isActive) {
+          node.classList.toggle("is-active", isActive);
+          renderState.active = isActive;
+        }
+
+        node.style.visibility = "visible";
+        node.style.pointerEvents = "auto";
+      }
+
       function updateProjectDial(instant = false) {
         if (!state.projectNodes.length) return;
 
@@ -3669,6 +3723,10 @@
         const radius = layout.radius;
         const angleStep = 360 / PROJECT_RING.length;
         const focusAngle = 180;
+        const isAutoRotating =
+          projectsOrbit.classList.contains("is-auto-rotating") &&
+          !state.isDialDragging &&
+          !projectsOrbit.classList.contains("is-wheel-scrolling");
         let closestRingIndex = state.activeRingIndex;
         let closestDistance = Infinity;
 
@@ -3676,10 +3734,17 @@
           const angle = normalizeAngle(state.dialRotation + angleStep * index);
           const radians = (angle * Math.PI) / 180;
           const frontness = (Math.cos(((angle - focusAngle) * Math.PI) / 180) + 1) / 2;
-          const x = snapProjectDialValue(centerX + radius * Math.cos(radians), 0.25);
-          const y = snapProjectDialValue(centerY + radius * Math.sin(radians), 0.25);
-          const scale = snapProjectDialValue(0.7 + frontness * 0.48, 0.005);
-          const opacity = snapProjectDialValue(0.14 + frontness * 0.82, 0.01);
+          const renderFrontness = isAutoRotating
+            ? snapProjectDialValue(frontness, 0.05)
+            : frontness;
+          const x = snapProjectDialValue(centerX + radius * Math.cos(radians), isAutoRotating ? 1 : 0.25);
+          const y = snapProjectDialValue(centerY + radius * Math.sin(radians), isAutoRotating ? 1 : 0.25);
+          const scale = isAutoRotating
+            ? snapProjectDialValue(0.84 + renderFrontness * 0.16, 0.02)
+            : 0.7 + renderFrontness * 0.48;
+          const opacity = isAutoRotating
+            ? snapProjectDialValue(0.28 + renderFrontness * 0.58, 0.03)
+            : 0.14 + renderFrontness * 0.82;
           const distance = angularDistance(angle, focusAngle);
 
           if (distance < closestDistance) {
@@ -3687,14 +3752,14 @@
             closestRingIndex = index;
           }
 
-          node.style.left = `${x}px`;
-          node.style.top = `${y}px`;
-          node.style.opacity = String(opacity);
-          node.style.visibility = "visible";
-          node.style.pointerEvents = "auto";
-          node.style.transform = `translate3d(-100%, -50%, 0) scale(${scale.toFixed(2)})`;
-          node.style.zIndex = String(Math.round(frontness * 100));
-          node.classList.toggle("is-active", index === closestRingIndex);
+          applyProjectNodeRender(node, {
+            left: `${x.toFixed(3)}px`,
+            top: `${y.toFixed(3)}px`,
+            opacity: opacity.toFixed(3),
+            transform: `translate3d(-100%, -50%, 0) scale(${scale.toFixed(3)})`,
+            zIndex: String(Math.round(renderFrontness * 100)),
+            isActive: index === closestRingIndex,
+          });
 
           if (instant) {
             node.getBoundingClientRect();
@@ -3745,21 +3810,21 @@
           }
         } else if (canAnimateIntro) {
           const idleFor = timestamp - state.lastProjectDialInteractionAt;
-          const idleStartDelay = 1320;
-          const idleRampDuration = 1800;
+          const idleStartDelay = 1480;
+          const idleRampDuration = 2400;
           const rawRamp = clampValue((idleFor - idleStartDelay) / idleRampDuration, 0, 1);
           const ramp = rawRamp * rawRamp * (3 - 2 * rawRamp);
           state.projectIdleRotationPhase += dt;
-          const pulse =
-            0.9 +
-            0.1 * Math.sin(state.projectIdleRotationPhase * 0.85) +
-            0.04 * Math.sin(state.projectIdleRotationPhase * 1.9 + 0.6);
-          const targetVelocity = state.idleProjectRotationSpeed * ramp * pulse;
-          const velocityBlend = Math.min(1, dt * 2.1);
+          const drift =
+            0.97 +
+            0.025 * Math.sin(state.projectIdleRotationPhase * 0.22 + 0.4) +
+            0.01 * Math.sin(state.projectIdleRotationPhase * 0.49 + 1.3);
+          const targetVelocity = state.idleProjectRotationSpeed * ramp * drift;
+          const velocityBlend = Math.min(1, dt * 1.35);
           state.projectIdleRotationVelocity +=
             (targetVelocity - state.projectIdleRotationVelocity) * velocityBlend;
 
-          if (Math.abs(state.projectIdleRotationVelocity) > 0.0008) {
+          if (Math.abs(state.projectIdleRotationVelocity) > 0.00035) {
             state.dialRotation += state.projectIdleRotationVelocity * dt;
             projectsOrbit.classList.add("is-auto-rotating");
             updateProjectDial();
