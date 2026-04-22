@@ -909,13 +909,10 @@
         projectOrbitIntroFromRotation: 0,
         projectOrbitIntroToRotation: 0,
         projectOrbitTweenDuration: 760,
-        projectIdleRotationVelocity: 0,
-        projectIdleRotationPhase: 0,
         lastProjectDialInteractionAt: 0,
         projectContrastSampleAt: 0,
         projectContrastInterval: 140,
         projectDialLayout: null,
-        idleProjectRotationSpeed: 0.72,
         pendingProjectRingIndex: -1,
         pendingProjectPointerId: null,
         stickerVisible: false,
@@ -929,6 +926,18 @@
         lizardSignalEffectEnabled: true,
       };
 
+      const HOME_LIZARD_CONFIG = {
+        scale: 2,
+        segments: 45,
+        segmentLength: 16,
+        lineColor: "rgba(255, 255, 255, 0.88)",
+        lineWidth: 1.05,
+        maxSpeed: 12,
+        maxBend: 0.4,
+        centerBodyIndex: 16,
+        frontLegIndex: 7,
+        backLegIndex: 25,
+      };
       const lizardState = {
         width: 0,
         height: 0,
@@ -944,20 +953,23 @@
             y: 0,
           },
         },
+        hasPointerTarget: false,
         critter: null,
         nodes: [],
-        segmentCount: 0,
-        legCount: 4,
-        tailCount: 12,
+        points: [],
+        renderPoints: [],
+        legs: [],
         anchor: { x: 0, y: 0 },
         parked: { x: 0, y: 0 },
         exitOrigin: { x: 0, y: 0 },
         mode: "parked",
         renderVisible: false,
         time: 0,
+        speed: 0,
+        walkCycle: 0,
         exitStartedAt: 0,
         exitTravelMs: 760,
-        frameInterval: 33,
+        frameInterval: 16,
         lastFrameAt: 0,
         rafId: 0,
         running: false,
@@ -984,9 +996,97 @@
         visible: false,
         snoutViewport: { x: 0, y: 0 },
         waveRadius: 0,
+        gameActive: false,
+        gameDistance: 0,
+        gameScore: 0,
+        gameBestScore: 0,
+        gameSpeed: 0,
+        gameNextSpawnAt: 0,
+        gameGroundOffset: 0,
+        gameObstacles: [],
+        gameClouds: [],
+        gameHorizonSegments: [],
+        gameSprites: {},
+        gameSpritesReady: false,
+        gameSpriteLoadPromise: null,
         rafId: 0,
         lastAt: 0,
       };
+      const CONTACT_DINO_GAME_SPRITES = {
+        cloud: {
+          key: "cloud",
+          src: "assets/contact-dino/2x-cloud.png",
+          width: 46,
+          height: 14,
+        },
+        horizon: {
+          key: "horizon",
+          src: "assets/contact-dino/2x-horizon.png",
+          width: 600,
+          height: 12,
+          variants: [0, 600],
+        },
+        obstacleSmall: {
+          key: "obstacleSmall",
+          src: "assets/contact-dino/2x-obstacle-small.png",
+          type: "CACTUS_SMALL",
+          width: 17,
+          height: 35,
+          multipleSpeed: 3,
+          minGap: 120,
+        },
+        obstacleLarge: {
+          key: "obstacleLarge",
+          src: "assets/contact-dino/2x-obstacle-large.png",
+          type: "CACTUS_LARGE",
+          width: 25,
+          height: 50,
+          multipleSpeed: 6,
+          minGap: 120,
+        },
+        text: {
+          key: "text",
+          src: "assets/contact-dino/2x-text.png",
+          glyphWidth: 10,
+          glyphHeight: 13,
+          advance: 11,
+        },
+      };
+
+      function preloadContactDinoGameSprites() {
+        if (contactDinoState.gameSpriteLoadPromise) {
+          return contactDinoState.gameSpriteLoadPromise;
+        }
+
+        const spriteEntries = Object.values(CONTACT_DINO_GAME_SPRITES);
+        contactDinoState.gameSpriteLoadPromise = Promise.all(
+          spriteEntries.map(
+            (sprite) =>
+              new Promise((resolve, reject) => {
+                const image = new Image();
+                image.decoding = "async";
+                image.onload = () => {
+                  contactDinoState.gameSprites[sprite.key] = image;
+                  resolve();
+                };
+                image.onerror = reject;
+                image.src = sprite.src;
+              }),
+          ),
+        )
+          .then(() => {
+            contactDinoState.gameSpritesReady = true;
+          })
+          .catch((error) => {
+            console.error("Failed to load contact dino sprites.", error);
+            contactDinoState.gameSpritesReady = false;
+            contactDinoState.gameSpriteLoadPromise = null;
+          });
+
+        return contactDinoState.gameSpriteLoadPromise;
+      }
+
+      preloadContactDinoGameSprites();
 
       prepareNavButtonLetters();
       prepareContactTextLetters();
@@ -1008,11 +1108,14 @@
       window.addEventListener("pointerdown", handleLizardPointerDown, { passive: true });
       window.addEventListener("pointerup", handleLizardPointerUp, { passive: true });
       window.addEventListener("pointercancel", handleLizardPointerUp, { passive: true });
+      window.addEventListener("touchstart", handleLizardTouch, { passive: true });
+      window.addEventListener("touchmove", handleLizardTouch, { passive: true });
       window.addEventListener("keydown", handleLizardKeyDown);
       window.addEventListener("keyup", handleLizardKeyUp);
       window.addEventListener("pointermove", handleContactDinoPointerMove, { passive: true });
       window.addEventListener("pointerdown", handleContactDinoPointerDown, { passive: true });
       window.addEventListener("pointerup", handleContactDinoPointerUp, { passive: true });
+      window.addEventListener("keydown", handleContactDinoKeydown);
       document.addEventListener("visibilitychange", handleVisibilityChange);
 
       if (document.fonts?.ready) {
@@ -1331,11 +1434,10 @@
         }
         lizardState.visible = state.activeSection === "home";
         if (showProjects && previousSection !== "projects") {
-          state.lastProjectDialInteractionAt = performance.now();
-          scheduleProjectDialTween(state.dialRotation + 4.5, 720);
+          state.lastProjectDialInteractionAt = performance.now() - 2600;
+          scheduleProjectDialTween(state.dialRotation + 3.2, 920);
         } else if (!showProjects) {
           cancelProjectDialTween();
-          state.projectIdleRotationVelocity = 0;
           projectsOrbit.classList.remove("is-auto-rotating");
         }
         updateHomeLizardState(previousSection);
@@ -1415,6 +1517,10 @@
         return Math.min(1.75, Math.max(1.28, width / 430));
       }
 
+      function getContactDinoGameVisualScale() {
+        return clampValue(contactDinoState.height / 150, 1, 1.45);
+      }
+
       function getContactDinoAnchorPoint() {
         return {
           x: Math.max(170, contactDinoState.width * 0.42),
@@ -1427,6 +1533,32 @@
           x: -170 * getContactDinoScale(),
           y: contactDinoState.height * 0.72,
         };
+      }
+
+      function buildContactDinoGroundAt(height, flat = false) {
+        if (flat) {
+          return () => height * 0.84;
+        }
+
+        return (x) =>
+          height * 0.84 + Math.sin(x * 0.024) * 5 + Math.sin(x * 0.009 + 1.2) * 4;
+      }
+
+      function getContactDinoGameStartX() {
+        return Math.max(132, contactDinoState.width * 0.26);
+      }
+
+      function getRandomContactDinoHorizonSourceX() {
+        const variants = CONTACT_DINO_GAME_SPRITES.horizon.variants;
+        return variants[Math.random() > 0.5 ? 1 : 0];
+      }
+
+      function resetContactDinoGameHorizon() {
+        const segmentWidth = CONTACT_DINO_GAME_SPRITES.horizon.width * getContactDinoGameVisualScale();
+        contactDinoState.gameHorizonSegments = [
+          { x: 0, sourceX: 0 },
+          { x: segmentWidth, sourceX: CONTACT_DINO_GAME_SPRITES.horizon.width },
+        ];
       }
 
       function updateContactDinoAnchors() {
@@ -1449,6 +1581,7 @@
         dino.y = dino.groundAt(x) - 46 * dino.scale;
         dino.vx = 0;
         dino.vy = 0;
+        dino.jumpVy = 0;
         dino.face = face;
         dino.drawFace = face;
         dino.roar = 0;
@@ -1469,6 +1602,110 @@
         );
       }
 
+      function resetContactDinoGame() {
+        contactDinoState.gameActive = false;
+        contactDinoState.gameDistance = 0;
+        contactDinoState.gameScore = 0;
+        contactDinoState.gameSpeed = 0;
+        contactDinoState.gameNextSpawnAt = 0;
+        contactDinoState.gameGroundOffset = 0;
+        contactDinoState.gameObstacles = [];
+        contactDinoState.gameClouds = [];
+        resetContactDinoGameHorizon();
+
+        if (contactDinoState.dino) {
+          contactDinoState.dino.groundAt = buildContactDinoGroundAt(contactDinoState.height);
+          contactDinoState.dino.jumpVy = 0;
+        }
+      }
+
+      function resetContactDinoGameClouds() {
+        const visualScale = getContactDinoGameVisualScale();
+        const cloudWidth = CONTACT_DINO_GAME_SPRITES.cloud.width * visualScale;
+        contactDinoState.gameClouds = [
+          { x: contactDinoState.width * 0.52, y: 34 * visualScale, width: cloudWidth },
+          { x: contactDinoState.width * 0.8, y: 58 * visualScale, width: cloudWidth },
+          { x: contactDinoState.width * 1.12, y: 44 * visualScale, width: cloudWidth },
+        ];
+      }
+
+      function spawnContactDinoGameObstacle() {
+        const dino = contactDinoState.dino;
+        if (!dino) return;
+
+        const visualScale = getContactDinoGameVisualScale();
+        const runnerSpeed = contactDinoState.gameSpeed / 60;
+        const variants = [
+          CONTACT_DINO_GAME_SPRITES.obstacleSmall,
+          CONTACT_DINO_GAME_SPRITES.obstacleLarge,
+        ];
+        const variant = variants[Math.floor(Math.random() * variants.length)];
+        let size = getRandomNum(1, 3);
+        if (size > 1 && variant.multipleSpeed > runnerSpeed) {
+          size = 1;
+        }
+
+        const width = variant.width * size * visualScale;
+        const height = variant.height * visualScale;
+        const minGap = Math.round(width * runnerSpeed + variant.minGap * 0.6 * visualScale);
+        const maxGap = Math.round(minGap * 1.5);
+        const gap = getRandomNum(minGap, maxGap);
+        contactDinoState.gameObstacles.push({
+          type: variant.type,
+          x: contactDinoState.width,
+          width,
+          height,
+          size,
+          sourceX: variant.width * size * (0.5 * (size - 1)),
+          gap,
+        });
+      }
+
+      function startContactDinoGame() {
+        preloadContactDinoGameSprites();
+
+        if (!contactDinoState.dino) {
+          contactDinoState.dino = createContactDino();
+        }
+
+        const dino = contactDinoState.dino;
+        dino.scale = getContactDinoScale();
+        dino.groundAt = buildContactDinoGroundAt(contactDinoState.height, true);
+        dino.x = getContactDinoGameStartX();
+        dino.y = dino.groundAt(dino.x) - 46 * dino.scale;
+        dino.vx = 0;
+        dino.vy = 0;
+        dino.jumpVy = 0;
+        dino.face = 1;
+        dino.drawFace = 1;
+        dino.walk = 0;
+        dino.roar = 0;
+        dino.footBackNear = new ContactFootStepper(
+          dino.x - 24 * dino.scale,
+          dino.groundAt(dino.x - 24 * dino.scale),
+          28 * dino.scale,
+          16 * dino.scale,
+        );
+        dino.footBackFar = new ContactFootStepper(
+          dino.x + 12 * dino.scale,
+          dino.groundAt(dino.x + 12 * dino.scale),
+          28 * dino.scale,
+          16 * dino.scale,
+        );
+
+        contactDinoState.pointer.inside = false;
+        contactDinoState.pointer.down = false;
+        contactDinoState.gameActive = true;
+        contactDinoState.gameDistance = 0;
+        contactDinoState.gameScore = 0;
+        contactDinoState.gameSpeed = 360;
+        contactDinoState.gameGroundOffset = 0;
+        contactDinoState.gameObstacles = [];
+        resetContactDinoGameHorizon();
+        resetContactDinoGameClouds();
+        contactDinoState.gameNextSpawnAt = dino.time + 0.9;
+      }
+
       function updateContactDinoState(previousSection = "") {
         const showContact = state.activeSection === "contact";
         contactDinoState.visible = showContact;
@@ -1485,6 +1722,7 @@
           contactDinoStage.setAttribute("aria-hidden", "false");
 
           if (previousSection !== "contact" || contactDinoState.mode === "parked") {
+            resetContactDinoGame();
             placeContactDino(contactDinoState.parked.x, 1);
             contactDinoState.mode = "entering";
             contactDinoState.pointer.inside = false;
@@ -1499,6 +1737,7 @@
           contactDinoState.mode === "active" ||
           contactDinoState.mode === "entering"
         ) {
+          resetContactDinoGame();
           contactDinoState.renderVisible = true;
           contactDinoState.mode = "exiting";
           contactDinoState.pointer.inside = false;
@@ -1531,13 +1770,13 @@
           roar: 0,
           blink: 0,
           blinkTimer: 1.4,
+          jumpVy: 0,
           footBackNear: null,
           footBackFar: null,
           scale: getContactDinoScale(width),
         };
 
-        const groundAt = (x) =>
-          height * 0.84 + Math.sin(x * 0.024) * 5 + Math.sin(x * 0.009 + 1.2) * 4;
+        const groundAt = buildContactDinoGroundAt(height);
 
         dino.groundAt = groundAt;
         dino.footBackNear = new ContactFootStepper(
@@ -1576,12 +1815,18 @@
           placeContactDino(contactDinoState.parked.x, -1);
         } else {
           contactDinoState.dino.scale = getContactDinoScale(width);
-          contactDinoState.dino.groundAt = (x) =>
-            height * 0.84 + Math.sin(x * 0.024) * 5 + Math.sin(x * 0.009 + 1.2) * 4;
+          contactDinoState.dino.groundAt = buildContactDinoGroundAt(
+            height,
+            contactDinoState.gameActive,
+          );
 
           if (contactDinoState.mode === "parked" && !contactDinoState.renderVisible) {
             placeContactDino(contactDinoState.parked.x, -1);
           }
+        }
+
+        if (contactDinoState.gameActive && contactDinoState.mode === "active") {
+          startContactDinoGame();
         }
 
         if (!contactDinoState.pointer.inside) {
@@ -1641,11 +1886,129 @@
         contactDinoState.pointer.down = false;
       }
 
+      function handleContactDinoKeydown(event) {
+        if (state.activeSection !== "contact" || contactDinoState.mode !== "active") return;
+
+        if (event.code === "Space") {
+          event.preventDefault();
+          startContactDinoGame();
+        }
+      }
+
       function getContactDinoSnoutOffset(face, scale) {
         return {
           x: face * 127 * scale,
           y: -37 * scale,
         };
+      }
+
+      function updateContactDinoGame(dt) {
+        const dino = contactDinoState.dino;
+        if (!dino) return;
+
+        const scale = dino.scale;
+        const visualScale = getContactDinoGameVisualScale();
+        const baseGround = dino.groundAt(0);
+        const baseY = baseGround - 46 * scale;
+
+        contactDinoState.gameDistance += contactDinoState.gameSpeed * dt;
+        contactDinoState.gameScore = Math.round(contactDinoState.gameDistance * 0.025);
+        contactDinoState.gameBestScore = Math.max(
+          contactDinoState.gameBestScore,
+          contactDinoState.gameScore,
+        );
+        contactDinoState.gameSpeed = Math.min(720, contactDinoState.gameSpeed + dt * 60);
+        dino.x = lerpValue(dino.x, getContactDinoGameStartX(), 0.12);
+        dino.face = 1;
+        dino.drawFace = lerpValue(dino.drawFace, 1, 0.18);
+        dino.roar = 0;
+
+        if (dino.time >= contactDinoState.gameNextSpawnAt) {
+          spawnContactDinoGameObstacle();
+          const latestObstacle =
+            contactDinoState.gameObstacles[contactDinoState.gameObstacles.length - 1];
+          const gapSeconds = latestObstacle ? latestObstacle.gap / contactDinoState.gameSpeed : 0.9;
+          contactDinoState.gameNextSpawnAt = dino.time + gapSeconds;
+        }
+
+        const horizonSprite = CONTACT_DINO_GAME_SPRITES.horizon;
+        const segmentWidth = horizonSprite.width * visualScale;
+        const horizonIncrement = contactDinoState.gameSpeed * dt;
+        contactDinoState.gameHorizonSegments.forEach((segment) => {
+          segment.x -= horizonIncrement;
+        });
+        contactDinoState.gameHorizonSegments.forEach((segment, index) => {
+          if (segment.x <= -segmentWidth) {
+            const sibling = contactDinoState.gameHorizonSegments[index === 0 ? 1 : 0];
+            segment.x = sibling.x + segmentWidth;
+            segment.sourceX = getRandomContactDinoHorizonSourceX();
+          }
+        });
+
+        contactDinoState.gameObstacles.forEach((obstacle) => {
+          obstacle.x -= contactDinoState.gameSpeed * dt;
+        });
+        contactDinoState.gameObstacles = contactDinoState.gameObstacles.filter(
+          (obstacle) => obstacle.x + obstacle.width > -40 * visualScale,
+        );
+        contactDinoState.gameClouds.forEach((cloud) => {
+          cloud.x -= contactDinoState.gameSpeed * dt * 0.18;
+          if (cloud.x + cloud.width < -12 * visualScale) {
+            cloud.x = contactDinoState.width + 24 * visualScale + Math.random() * 80 * visualScale;
+            cloud.y = getRandomNum(30, 71) * visualScale;
+            cloud.width = CONTACT_DINO_GAME_SPRITES.cloud.width * visualScale;
+          }
+        });
+
+        const nearestObstacle = contactDinoState.gameObstacles.find(
+          (obstacle) => obstacle.x + obstacle.width >= dino.x + 18 * scale,
+        );
+
+        const isGrounded = dino.y >= baseY - 1;
+        if (nearestObstacle && isGrounded) {
+          const distanceToObstacle = nearestObstacle.x - (dino.x + 58 * scale);
+          const jumpWindow = 90 * scale + contactDinoState.gameSpeed * 0.14;
+          if (distanceToObstacle <= jumpWindow && distanceToObstacle >= 12 * scale) {
+            dino.jumpVy = -780 * scale;
+          }
+        }
+
+        dino.jumpVy += 2050 * scale * dt;
+        dino.y += dino.jumpVy * dt;
+        if (dino.y > baseY) {
+          dino.y = baseY;
+          dino.jumpVy = 0;
+        }
+
+        const dinoFront = dino.x + 64 * scale;
+        const dinoBack = dino.x - 38 * scale;
+        const dinoTop = dino.y - 58 * scale;
+        const dinoBottom = dino.y + 18 * scale;
+        const collided = contactDinoState.gameObstacles.some((obstacle) => {
+          const obstacleLeft = obstacle.x;
+          const obstacleRight = obstacle.x + obstacle.width;
+          const obstacleTop = baseGround - obstacle.height;
+          const obstacleBottom = baseGround;
+          return (
+            dinoFront >= obstacleLeft &&
+            dinoBack <= obstacleRight &&
+            dinoBottom >= obstacleTop &&
+            dinoTop <= obstacleBottom
+          );
+        });
+
+        if (collided) {
+          startContactDinoGame();
+          return;
+        }
+
+        dino.vx = contactDinoState.gameSpeed * 0.11;
+        dino.walk += dt * (5.8 + contactDinoState.gameSpeed * 0.012);
+
+        const hipNearX = dino.x - 10 * scale;
+        const hipFarX = dino.x + 22 * scale;
+        dino.footBackNear.update(hipNearX, dino.groundAt(hipNearX), dino.vx * 0.12, 1, dt);
+        dino.footBackFar.update(hipFarX, dino.groundAt(hipFarX), dino.vx * 0.12, 1, dt);
       }
 
       function updateContactDino(dt) {
@@ -1661,6 +2024,11 @@
         }
         dino.blink = Math.max(0, dino.blink - dt * 7);
         updateContactDinoAnchors();
+
+        if (contactDinoState.gameActive && contactDinoState.mode === "active") {
+          updateContactDinoGame(dt);
+          return;
+        }
 
         let desiredFace = dino.face;
         let targetX = dino.x;
@@ -1869,6 +2237,111 @@
           dino.roar > 0 ? 42 * scale + (1 - dino.roar) * 360 : 0;
       }
 
+      function drawContactDinoGameObstacle(obstacle, groundY) {
+        const spriteKey = obstacle.type === "CACTUS_LARGE" ? "obstacleLarge" : "obstacleSmall";
+        const sprite = CONTACT_DINO_GAME_SPRITES[spriteKey];
+        const image = contactDinoState.gameSprites[sprite.key];
+        if (!image) return;
+
+        contactDinoContext.drawImage(
+          image,
+          obstacle.sourceX * 2,
+          0,
+          sprite.width * obstacle.size * 2,
+          sprite.height * 2,
+          Math.round(obstacle.x),
+          Math.round(groundY - obstacle.height),
+          Math.round(obstacle.width),
+          Math.round(obstacle.height),
+        );
+      }
+
+      function drawContactDinoGameCloud(cloud) {
+        const sprite = CONTACT_DINO_GAME_SPRITES.cloud;
+        const image = contactDinoState.gameSprites[sprite.key];
+        if (!image) return;
+
+        const visualScale = getContactDinoGameVisualScale();
+        contactDinoContext.drawImage(
+          image,
+          0,
+          0,
+          sprite.width * 2,
+          sprite.height * 2,
+          Math.round(cloud.x),
+          Math.round(cloud.y),
+          Math.round(sprite.width * visualScale),
+          Math.round(sprite.height * visualScale),
+        );
+      }
+
+      function drawContactDinoGameGround(groundY) {
+        const sprite = CONTACT_DINO_GAME_SPRITES.horizon;
+        const image = contactDinoState.gameSprites[sprite.key];
+        if (!image) return;
+
+        const visualScale = getContactDinoGameVisualScale();
+        const segmentWidth = sprite.width * visualScale;
+        const targetY = groundY - sprite.height * visualScale + 1;
+
+        contactDinoState.gameHorizonSegments.forEach((segment) => {
+          contactDinoContext.drawImage(
+            image,
+            segment.sourceX * 2,
+            0,
+            sprite.width * 2,
+            sprite.height * 2,
+            Math.round(segment.x),
+            Math.round(targetY),
+            Math.round(segmentWidth),
+            Math.round(sprite.height * visualScale),
+          );
+        });
+      }
+
+      function drawContactDinoGameHud() {
+        const sprite = CONTACT_DINO_GAME_SPRITES.text;
+        const image = contactDinoState.gameSprites[sprite.key];
+        if (!image) return;
+
+        const visualScale = getContactDinoGameVisualScale();
+        const glyphWidth = sprite.glyphWidth * visualScale;
+        const glyphHeight = sprite.glyphHeight * visualScale;
+        const advance = sprite.advance * visualScale;
+        const top = 6 * visualScale;
+        const scoreText = String(contactDinoState.gameScore).padStart(5, "0");
+        const hiText = String(contactDinoState.gameBestScore).padStart(5, "0");
+        const hiGlyphs = [10, 11, null, ...hiText.split("").map((digit) => Number(digit))];
+        const currentGlyphs = scoreText.split("").map((digit) => Number(digit));
+
+        function drawGlyphRow(glyphs, startX, opacity = 1) {
+          contactDinoContext.save();
+          contactDinoContext.globalAlpha = opacity;
+          glyphs.forEach((glyph, index) => {
+            if (glyph === null) return;
+            contactDinoContext.drawImage(
+              image,
+              glyph * sprite.glyphWidth * 2,
+              0,
+              sprite.glyphWidth * 2,
+              sprite.glyphHeight * 2,
+              Math.round(startX + index * advance),
+              Math.round(top),
+              Math.round(glyphWidth),
+              Math.round(glyphHeight),
+            );
+          });
+          contactDinoContext.restore();
+        }
+
+        const currentWidth = currentGlyphs.length * advance;
+        const hiWidth = hiGlyphs.length * advance;
+        const currentX = contactDinoState.width - 18 - currentWidth;
+        const hiX = currentX - advance - hiWidth;
+        drawGlyphRow(hiGlyphs, hiX, 0.8);
+        drawGlyphRow(currentGlyphs, currentX, 1);
+      }
+
       function renderContactDino() {
         if (!contactDinoContext || !contactDinoState.dino) return;
 
@@ -1881,18 +2354,31 @@
 
         const dino = contactDinoState.dino;
         const scale = dino.scale;
+        const groundY = dino.groundAt(0);
 
-        contactDinoContext.strokeStyle = "rgba(17,17,17,0.14)";
-        contactDinoContext.lineWidth = 1;
-        contactDinoContext.beginPath();
-        for (let x = 0; x <= width; x += 8) {
-          const y = dino.groundAt(x);
-          if (x === 0) contactDinoContext.moveTo(x, y);
-          else contactDinoContext.lineTo(x, y);
+        if (contactDinoState.gameActive) {
+          contactDinoState.gameClouds.forEach((cloud) => {
+            drawContactDinoGameCloud(cloud);
+          });
+          drawContactDinoGameGround(groundY);
+          contactDinoState.gameObstacles.forEach((obstacle) => {
+            drawContactDinoGameObstacle(obstacle, groundY);
+          });
+        } else {
+          contactDinoContext.strokeStyle = "rgba(17,17,17,0.14)";
+          contactDinoContext.lineWidth = 1;
+          contactDinoContext.beginPath();
+          for (let x = 0; x <= width; x += 8) {
+            const y = dino.groundAt(x);
+            if (x === 0) contactDinoContext.moveTo(x, y);
+            else contactDinoContext.lineTo(x, y);
+          }
+          contactDinoContext.stroke();
         }
-        contactDinoContext.stroke();
 
-        const bob = Math.sin(dino.walk * 2.4) * Math.min(4.5 * scale, Math.abs(dino.vx) * 0.18);
+        const bob = contactDinoState.gameActive
+          ? Math.sin(dino.walk * 2.6) * Math.min(2.6 * scale, Math.abs(dino.vx) * 0.03)
+          : Math.sin(dino.walk * 2.4) * Math.min(4.5 * scale, Math.abs(dino.vx) * 0.18);
         const hip = { x: dino.x, y: dino.y + bob };
         const chest = { x: hip.x + dino.drawFace * 40 * scale, y: hip.y - 15 * scale };
         const neck1 = { x: chest.x + dino.drawFace * 16 * scale, y: chest.y - 10 * scale };
@@ -1944,8 +2430,18 @@
         );
         drawContactDinoArm(shoulderNear, dino.walk, false);
 
-        const jawOpen = contactDinoState.pointer.down ? 12 * scale : dino.roar > 0 ? 8 * scale : 0;
+        const jawOpen = contactDinoState.gameActive
+          ? 0
+          : contactDinoState.pointer.down
+            ? 12 * scale
+            : dino.roar > 0
+              ? 8 * scale
+              : 0;
         drawContactDinoHead(headBase, jawOpen);
+
+        if (contactDinoState.gameActive) {
+          drawContactDinoGameHud();
+        }
       }
 
       function runContactDinoLoop(now) {
@@ -2556,6 +3052,26 @@
         };
       }
 
+      function getHomeLizardCenterPoint() {
+        const desiredBodyCenterY = lizardState.height * 0.56;
+        const headY = clampValue(
+          desiredBodyCenterY -
+            HOME_LIZARD_CONFIG.segmentLength * HOME_LIZARD_CONFIG.centerBodyIndex,
+          88,
+          Math.max(88, lizardState.height - 88),
+        );
+
+        return {
+          x: lizardState.width * 0.5,
+          y: headY,
+        };
+      }
+
+      function shouldUseHomeLizardCenterFallback() {
+        if (lizardState.hasPointerTarget) return false;
+        return !window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+      }
+
       function updateHomeLizardAnchors() {
         const anchor = getHomeLizardAnchorPoint();
         const parked = getHomeLizardParkedPoint();
@@ -2570,11 +3086,7 @@
 
         if (state.activeSection === "home") {
           if (previousSection !== "home") {
-            setupLizard(
-              8 / Math.sqrt(lizardState.legCount),
-              lizardState.legCount,
-              lizardState.tailCount,
-            );
+            setupLizard();
           }
           lizardState.renderVisible = true;
           homeLizardStage.classList.add("is-visible");
@@ -2770,7 +3282,37 @@
         });
       }
 
+      function getHomeLizardNodes() {
+        if (lizardState.renderPoints.length) return lizardState.renderPoints;
+        return lizardState.points;
+      }
+
+      function easeOutCubic(value) {
+        return 1 - (1 - value) ** 4;
+      }
+
+      function angleDiff(a, b) {
+        let diff = a - b;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        return diff;
+      }
+
+      function easeInOutSine(value) {
+        return -(Math.cos(Math.PI * value) - 1) / 2;
+      }
+
       function measureLizardBounds() {
+        const nodes = getHomeLizardNodes();
+        if (!nodes.length) {
+          return {
+            minX: 0,
+            maxX: 0,
+            minY: 0,
+            maxY: 0,
+          };
+        }
+
         const bounds = {
           minX: Number.POSITIVE_INFINITY,
           maxX: Number.NEGATIVE_INFINITY,
@@ -2778,8 +3320,8 @@
           maxY: Number.NEGATIVE_INFINITY,
         };
 
-        for (let index = 0; index < lizardState.nodes.length; index += 1) {
-          const node = lizardState.nodes[index];
+        for (let index = 0; index < nodes.length; index += 1) {
+          const node = nodes[index];
           bounds.minX = Math.min(bounds.minX, node.x);
           bounds.maxX = Math.max(bounds.maxX, node.x);
           bounds.minY = Math.min(bounds.minY, node.y);
@@ -2789,300 +3331,368 @@
         return bounds;
       }
 
-      class Segment {
-        constructor(parent, size, angle, range, stiffness) {
-          lizardState.segmentCount += 1;
-          this.isSegment = true;
-          this.parent = parent;
-          if (typeof parent.children === "object") {
-            parent.children.push(this);
-          }
-          this.children = [];
-          this.size = size;
-          this.relAngle = angle;
-          this.defAngle = angle;
-          this.absAngle = parent.absAngle + angle;
-          this.range = range;
-          this.stiffness = stiffness;
-          lizardState.nodes.push(this);
-          this.updateRelative(false, true);
+      function resolveHomeLizardLegTarget(leg, includeForwardOffset = true) {
+        const spineNode = lizardState.renderPoints[leg.idx];
+        if (!spineNode) {
+          return { x: 0, y: 0 };
         }
 
-        updateRelative(iterate, flex) {
-          this.relAngle -=
-            2 *
-            Math.PI *
-            Math.floor((this.relAngle - this.defAngle) / (2 * Math.PI) + 0.5);
+        const scale = HOME_LIZARD_CONFIG.scale;
+        const legReach = HOME_LIZARD_CONFIG.segmentLength * 4.2;
+        const idealAngle =
+          spineNode.angle +
+          (Math.PI / 2.5) * leg.side +
+          (leg.isFront ? 0.2 : -0.4);
+        const forwardOffset = includeForwardOffset
+          ? lizardState.speed * scale * (leg.isFront ? 3.5 : 4)
+          : 0;
 
-          if (flex) {
-            this.relAngle = Math.min(
-              this.defAngle + this.range / 2,
-              Math.max(
-                this.defAngle - this.range / 2,
-                (this.relAngle - this.defAngle) / this.stiffness + this.defAngle,
-              ),
+        return {
+          x:
+            spineNode.x +
+            Math.cos(idealAngle) * legReach +
+            Math.cos(spineNode.angle) * forwardOffset,
+          y:
+            spineNode.y +
+            Math.sin(idealAngle) * legReach +
+            Math.sin(spineNode.angle) * forwardOffset,
+        };
+      }
+
+      function syncHomeLizardLegs() {
+        lizardState.legs.forEach((leg) => {
+          const target = resolveHomeLizardLegTarget(leg, false);
+          leg.foot.x = target.x;
+          leg.foot.y = target.y;
+          leg.target.x = target.x;
+          leg.target.y = target.y;
+          leg.origin.x = target.x;
+          leg.origin.y = target.y;
+          leg.stepProgress = 1;
+        });
+      }
+
+      function updateHomeLizardPhysics(targetX, targetY) {
+        if (!lizardState.points.length) return;
+
+        const head = lizardState.points[0];
+        const dx = targetX - head.x;
+        const dy = targetY - head.y;
+        const distToTarget = Math.hypot(dx, dy);
+        let targetSpeed = 0;
+
+        if (distToTarget > 5) {
+          targetSpeed = Math.min(distToTarget * 0.12, HOME_LIZARD_CONFIG.maxSpeed);
+          targetSpeed += Math.sin(lizardState.walkCycle * 2) * 2.5;
+          targetSpeed = Math.max(0.5, targetSpeed);
+        }
+
+        lizardState.speed += (targetSpeed - lizardState.speed) * 0.25;
+
+        if (distToTarget > 2) {
+          head.x += (dx / distToTarget) * lizardState.speed;
+          head.y += (dy / distToTarget) * lizardState.speed;
+          head.angle = Math.atan2(dy, dx);
+        }
+
+        lizardState.walkCycle += lizardState.speed * 0.05;
+
+        for (let index = 1; index < HOME_LIZARD_CONFIG.segments; index += 1) {
+          const point = lizardState.points[index];
+          const previous = lizardState.points[index - 1];
+          const deltaX = previous.x - point.x;
+          const deltaY = previous.y - point.y;
+          let targetAngle = Math.atan2(deltaY, deltaX);
+          const diff = angleDiff(targetAngle, previous.angle);
+
+          if (Math.abs(diff) > HOME_LIZARD_CONFIG.maxBend) {
+            targetAngle = previous.angle + Math.sign(diff) * HOME_LIZARD_CONFIG.maxBend;
+          }
+
+          point.angle = targetAngle;
+          point.x = previous.x - Math.cos(point.angle) * HOME_LIZARD_CONFIG.segmentLength;
+          point.y = previous.y - Math.sin(point.angle) * HOME_LIZARD_CONFIG.segmentLength;
+        }
+
+        for (let index = 0; index < HOME_LIZARD_CONFIG.segments; index += 1) {
+          const point = lizardState.points[index];
+          const renderPoint = lizardState.renderPoints[index];
+          let swayFactor = 0;
+
+          if (index <= 25) {
+            swayFactor = Math.sin((index / 25) * Math.PI);
+          } else {
+            const tailProgress = (index - 25) / (HOME_LIZARD_CONFIG.segments - 25);
+            swayFactor = tailProgress * tailProgress * 1.8;
+          }
+
+          const swayAmplitude = lizardState.speed * 0.4 * swayFactor;
+          const swayPhase = lizardState.walkCycle - index * 0.2;
+          const swayOffset = Math.sin(swayPhase) * swayAmplitude;
+
+          renderPoint.x = point.x + Math.cos(point.angle + Math.PI / 2) * swayOffset;
+          renderPoint.y = point.y + Math.sin(point.angle + Math.PI / 2) * swayOffset;
+          renderPoint.angle = point.angle;
+        }
+
+        lizardState.legs.forEach((leg) => {
+          const nextTarget = resolveHomeLizardLegTarget(leg);
+          const distToIdeal = Math.hypot(
+            nextTarget.x - leg.foot.x,
+            nextTarget.y - leg.foot.y,
+          );
+          const cycleMod = lizardState.walkCycle % (Math.PI * 2);
+          const isMyTurn = leg.pair === 0 ? cycleMod < Math.PI : cycleMod >= Math.PI;
+
+          if (
+            leg.stepProgress >= 1 &&
+            ((distToIdeal > HOME_LIZARD_CONFIG.segmentLength * 2 &&
+              isMyTurn &&
+              lizardState.speed > 1) ||
+              distToIdeal > HOME_LIZARD_CONFIG.segmentLength * 4)
+          ) {
+            leg.origin.x = leg.foot.x;
+            leg.origin.y = leg.foot.y;
+            leg.target.x = nextTarget.x;
+            leg.target.y = nextTarget.y;
+            leg.stepProgress = 0;
+          }
+
+          if (leg.stepProgress < 1) {
+            leg.stepProgress += 0.18;
+            if (leg.stepProgress > 1) leg.stepProgress = 1;
+
+            const ease = easeOutCubic(leg.stepProgress);
+            leg.foot.x = leg.origin.x + (leg.target.x - leg.origin.x) * ease;
+            leg.foot.y = leg.origin.y + (leg.target.y - leg.origin.y) * ease;
+          }
+        });
+
+        lizardState.critter = head;
+        lizardState.nodes = getHomeLizardNodes();
+      }
+
+      function drawHomeLizardLegs() {
+        const scale = HOME_LIZARD_CONFIG.scale;
+        homeLizardContext.lineWidth = HOME_LIZARD_CONFIG.lineWidth;
+
+        lizardState.legs.forEach((leg) => {
+          const spineNode = lizardState.renderPoints[leg.idx];
+          if (!spineNode) return;
+
+          const shoulderWidth = HOME_LIZARD_CONFIG.segmentLength * 1.5;
+          const shoulderAngle = spineNode.angle + (Math.PI / 2) * leg.side;
+          const shoulderX = spineNode.x + Math.cos(shoulderAngle) * shoulderWidth;
+          const shoulderY = spineNode.y + Math.sin(shoulderAngle) * shoulderWidth;
+          const footX = leg.foot.x;
+          const footY = leg.foot.y;
+          const dx = footX - shoulderX;
+          const dy = footY - shoulderY;
+          let dist = Math.max(0.001, Math.hypot(dx, dy));
+          const upperLength =
+            HOME_LIZARD_CONFIG.segmentLength * (leg.isFront ? 2.5 : 3);
+          const lowerLength =
+            HOME_LIZARD_CONFIG.segmentLength * (leg.isFront ? 2.5 : 3);
+
+          if (dist >= upperLength + lowerLength) {
+            dist = upperLength + lowerLength - 0.01;
+          }
+
+          const angleToFoot = Math.atan2(dy, dx);
+          const cosAlpha =
+            (upperLength * upperLength +
+              dist * dist -
+              lowerLength * lowerLength) /
+            (2 * upperLength * dist);
+          const alpha = Math.acos(Math.max(-1, Math.min(1, cosAlpha)));
+          const jointAngle = angleToFoot + leg.side * alpha;
+          const jointX = shoulderX + Math.cos(jointAngle) * upperLength;
+          const jointY = shoulderY + Math.sin(jointAngle) * upperLength;
+
+          homeLizardContext.beginPath();
+          homeLizardContext.moveTo(spineNode.x, spineNode.y);
+          homeLizardContext.lineTo(shoulderX, shoulderY);
+          homeLizardContext.lineTo(jointX, jointY);
+          homeLizardContext.lineTo(footX, footY);
+          homeLizardContext.stroke();
+
+          const toeLength = 6 * scale;
+          const footDirection = spineNode.angle + (Math.PI / 8) * leg.side;
+          homeLizardContext.beginPath();
+          for (let toeIndex = -1; toeIndex <= 1; toeIndex += 1) {
+            const toeAngle = footDirection + toeIndex * 0.4;
+            homeLizardContext.moveTo(footX, footY);
+            homeLizardContext.lineTo(
+              footX + Math.cos(toeAngle) * toeLength,
+              footY + Math.sin(toeAngle) * toeLength,
             );
           }
-
-          this.absAngle = this.parent.absAngle + this.relAngle;
-          this.x = this.parent.x + Math.cos(this.absAngle) * this.size;
-          this.y = this.parent.y + Math.sin(this.absAngle) * this.size;
-
-          if (!iterate) return;
-
-          for (let index = 0; index < this.children.length; index += 1) {
-            this.children[index].updateRelative(true, flex);
-          }
-        }
-
-        draw(iterate) {
-          homeLizardContext.beginPath();
-          homeLizardContext.moveTo(this.parent.x, this.parent.y);
-          homeLizardContext.lineTo(this.x, this.y);
           homeLizardContext.stroke();
-
-          if (!iterate) return;
-
-          for (let index = 0; index < this.children.length; index += 1) {
-            this.children[index].draw(true);
-          }
-        }
-
-        follow(iterate) {
-          const x = this.parent.x;
-          const y = this.parent.y;
-          const dist = Math.hypot(this.x - x, this.y - y) || 1;
-          this.x = x + (this.size * (this.x - x)) / dist;
-          this.y = y + (this.size * (this.y - y)) / dist;
-          this.absAngle = Math.atan2(this.y - y, this.x - x);
-          this.relAngle = this.absAngle - this.parent.absAngle;
-          this.updateRelative(false, true);
-
-          if (!iterate) return;
-
-          for (let index = 0; index < this.children.length; index += 1) {
-            this.children[index].follow(true);
-          }
-        }
+        });
       }
 
-      class LimbSystem {
-        constructor(end, length, speed, creature) {
-          this.end = end;
-          this.length = Math.max(1, length);
-          this.creature = creature;
-          this.speed = speed;
-          creature.systems.push(this);
-          this.nodes = [];
+      function drawHomeLizardSpineAndRibs() {
+        const scale = HOME_LIZARD_CONFIG.scale;
+        homeLizardContext.lineWidth = HOME_LIZARD_CONFIG.lineWidth;
+        homeLizardContext.beginPath();
+        homeLizardContext.moveTo(
+          lizardState.renderPoints[0].x,
+          lizardState.renderPoints[0].y,
+        );
 
-          let node = end;
-          for (let index = 0; index < length; index += 1) {
-            this.nodes.unshift(node);
-            node = node.parent;
-            if (!node.isSegment) {
-              this.length = index + 1;
-              break;
-            }
-          }
-
-          this.hip = this.nodes[0].parent;
+        for (let index = 1; index < HOME_LIZARD_CONFIG.segments - 1; index += 1) {
+          const point = lizardState.renderPoints[index];
+          const nextPoint = lizardState.renderPoints[index + 1];
+          const midX = (point.x + nextPoint.x) / 2;
+          const midY = (point.y + nextPoint.y) / 2;
+          homeLizardContext.quadraticCurveTo(point.x, point.y, midX, midY);
         }
 
-        moveTo(x, y) {
-          this.nodes[0].updateRelative(true, true);
-          let distance = Math.hypot(x - this.end.x, y - this.end.y);
-          let length = Math.max(0, distance - this.speed);
+        const tailEnd = lizardState.renderPoints[HOME_LIZARD_CONFIG.segments - 1];
+        homeLizardContext.lineTo(tailEnd.x, tailEnd.y);
+        homeLizardContext.stroke();
 
-          for (let index = this.nodes.length - 1; index >= 0; index -= 1) {
-            const node = this.nodes[index];
-            const angle = Math.atan2(node.y - y, node.x - x);
-            node.x = x + length * Math.cos(angle);
-            node.y = y + length * Math.sin(angle);
-            x = node.x;
-            y = node.y;
-            length = node.size;
-          }
+        for (let index = 3; index < 28; index += 1) {
+          const point = lizardState.renderPoints[index];
 
-          for (let index = 0; index < this.nodes.length; index += 1) {
-            const node = this.nodes[index];
-            node.absAngle = Math.atan2(node.y - node.parent.y, node.x - node.parent.x);
-            node.relAngle = node.absAngle - node.parent.absAngle;
+          if (index >= 6 && index <= 23) {
+            const ribRatio = Math.sin(((index - 5) / 19) * Math.PI);
+            const ribWidth = ribRatio * 18 * scale;
+            const sweep = 0.35;
 
-            for (let childIndex = 0; childIndex < node.children.length; childIndex += 1) {
-              const childNode = node.children[childIndex];
-              if (!this.nodes.includes(childNode)) {
-                childNode.updateRelative(true, false);
-              }
-            }
-          }
-        }
+            homeLizardContext.beginPath();
+            homeLizardContext.moveTo(point.x, point.y);
+            homeLizardContext.quadraticCurveTo(
+              point.x + Math.cos(point.angle - Math.PI / 2 - sweep) * ribWidth * 0.8,
+              point.y + Math.sin(point.angle - Math.PI / 2 - sweep) * ribWidth * 0.8,
+              point.x + Math.cos(point.angle - Math.PI / 2) * ribWidth,
+              point.y + Math.sin(point.angle - Math.PI / 2) * ribWidth,
+            );
+            homeLizardContext.stroke();
 
-        update() {
-          this.moveTo(lizardState.input.mouse.x, lizardState.input.mouse.y);
-        }
-      }
-
-      class LegSystem extends LimbSystem {
-        constructor(end, length, speed, creature) {
-          super(end, length, speed, creature);
-          this.goalX = end.x;
-          this.goalY = end.y;
-          this.step = 0;
-          this.forwardness = 0;
-          this.reach = 0.9 * Math.hypot(this.end.x - this.hip.x, this.end.y - this.hip.y);
-
-          let relAngle =
-            this.creature.absAngle -
-            Math.atan2(this.end.y - this.hip.y, this.end.x - this.hip.x);
-          relAngle -= 2 * Math.PI * Math.floor(relAngle / (2 * Math.PI) + 0.5);
-          this.swing = -relAngle + (2 * (relAngle < 0) - 1) * (Math.PI / 2);
-          this.swingOffset = this.creature.absAngle - this.hip.absAngle;
-        }
-
-        update(x, y) {
-          this.moveTo(this.goalX, this.goalY);
-
-          if (this.step === 0) {
-            const dist = Math.hypot(this.end.x - this.goalX, this.end.y - this.goalY);
-            if (dist > 1) {
-              this.step = 1;
-              this.goalX =
-                this.hip.x +
-                this.reach * Math.cos(this.swing + this.hip.absAngle + this.swingOffset) +
-                (2 * Math.random() - 1) * (this.reach / 2);
-              this.goalY =
-                this.hip.y +
-                this.reach * Math.sin(this.swing + this.hip.absAngle + this.swingOffset) +
-                (2 * Math.random() - 1) * (this.reach / 2);
-            }
-            return;
-          }
-
-          const theta =
-            Math.atan2(this.end.y - this.hip.y, this.end.x - this.hip.x) - this.hip.absAngle;
-          const dist = Math.hypot(this.end.x - this.hip.x, this.end.y - this.hip.y);
-          const forwardness = dist * Math.cos(theta);
-          const delta = this.forwardness - forwardness;
-          this.forwardness = forwardness;
-
-          if (delta * delta < 1) {
-            this.step = 0;
-            this.goalX = this.hip.x + (this.end.x - this.hip.x);
-            this.goalY = this.hip.y + (this.end.y - this.hip.y);
-          }
-        }
-      }
-
-      class Creature {
-        constructor(
-          x,
-          y,
-          angle,
-          fAccel,
-          fFric,
-          fRes,
-          fThresh,
-          rAccel,
-          rFric,
-          rRes,
-          rThresh,
-        ) {
-          this.x = x;
-          this.y = y;
-          this.absAngle = angle;
-          this.fSpeed = 0;
-          this.speed = 0;
-          this.fAccel = fAccel;
-          this.fFric = fFric;
-          this.fRes = fRes;
-          this.fThresh = fThresh;
-          this.rSpeed = 0;
-          this.rAccel = rAccel;
-          this.rFric = rFric;
-          this.rRes = rRes;
-          this.rThresh = rThresh;
-          this.children = [];
-          this.systems = [];
-        }
-
-        follow(x, y) {
-          const dist = Math.hypot(this.x - x, this.y - y);
-          const angle = Math.atan2(y - this.y, x - this.x);
-          let accel = this.fAccel;
-
-          if (this.systems.length > 0) {
-            let sum = 0;
-            for (let index = 0; index < this.systems.length; index += 1) {
-              sum += this.systems[index].step === 0;
-            }
-            accel *= sum / this.systems.length;
-          }
-
-          this.fSpeed += accel * (dist > this.fThresh);
-          this.fSpeed *= 1 - this.fRes;
-          this.speed = Math.max(0, this.fSpeed - this.fFric);
-
-          let diff = this.absAngle - angle;
-          diff -= 2 * Math.PI * Math.floor(diff / (2 * Math.PI) + 0.5);
-          if (Math.abs(diff) > this.rThresh && dist > this.fThresh) {
-            this.rSpeed -= this.rAccel * (2 * (diff > 0) - 1);
-          }
-
-          this.rSpeed *= 1 - this.rRes;
-          if (Math.abs(this.rSpeed) > this.rFric) {
-            this.rSpeed -= this.rFric * (2 * (this.rSpeed > 0) - 1);
+            homeLizardContext.beginPath();
+            homeLizardContext.moveTo(point.x, point.y);
+            homeLizardContext.quadraticCurveTo(
+              point.x + Math.cos(point.angle + Math.PI / 2 + sweep) * ribWidth * 0.8,
+              point.y + Math.sin(point.angle + Math.PI / 2 + sweep) * ribWidth * 0.8,
+              point.x + Math.cos(point.angle + Math.PI / 2) * ribWidth,
+              point.y + Math.sin(point.angle + Math.PI / 2) * ribWidth,
+            );
+            homeLizardContext.stroke();
           } else {
-            this.rSpeed = 0;
+            const vertebraWidth = (index < 6 ? 3 : 4) * scale;
+            homeLizardContext.beginPath();
+            homeLizardContext.moveTo(
+              point.x + Math.cos(point.angle - Math.PI / 2) * vertebraWidth,
+              point.y + Math.sin(point.angle - Math.PI / 2) * vertebraWidth,
+            );
+            homeLizardContext.lineTo(
+              point.x + Math.cos(point.angle + Math.PI / 2) * vertebraWidth,
+              point.y + Math.sin(point.angle + Math.PI / 2) * vertebraWidth,
+            );
+            homeLizardContext.stroke();
           }
-
-          this.absAngle += this.rSpeed;
-          this.absAngle -= 2 * Math.PI * Math.floor(this.absAngle / (2 * Math.PI) + 0.5);
-          this.x += this.speed * Math.cos(this.absAngle);
-          this.y += this.speed * Math.sin(this.absAngle);
-          this.absAngle += Math.PI;
-
-          for (let index = 0; index < this.children.length; index += 1) {
-            this.children[index].follow(true, true);
-          }
-
-          for (let index = 0; index < this.systems.length; index += 1) {
-            this.systems[index].update(x, y);
-          }
-
-          this.absAngle -= Math.PI;
-          this.draw(true);
         }
+      }
 
-        draw(iterate) {
-          const radius = 4;
+      function drawHomeLizardTail() {
+        const scale = HOME_LIZARD_CONFIG.scale;
+        homeLizardContext.lineWidth = HOME_LIZARD_CONFIG.lineWidth;
+
+        for (let index = 28; index < HOME_LIZARD_CONFIG.segments; index += 2) {
+          const point = lizardState.renderPoints[index];
+          const taperRatio =
+            1 - (index - 28) / (HOME_LIZARD_CONFIG.segments - 28);
+          const tailWidth = taperRatio * 5.5 * scale;
+
           homeLizardContext.beginPath();
-          homeLizardContext.arc(
-            this.x,
-            this.y,
-            radius,
-            Math.PI / 4 + this.absAngle,
-            (7 * Math.PI) / 4 + this.absAngle,
-          );
           homeLizardContext.moveTo(
-            this.x + radius * Math.cos((7 * Math.PI) / 4 + this.absAngle),
-            this.y + radius * Math.sin((7 * Math.PI) / 4 + this.absAngle),
+            point.x + Math.cos(point.angle - Math.PI / 2) * tailWidth,
+            point.y + Math.sin(point.angle - Math.PI / 2) * tailWidth,
           );
           homeLizardContext.lineTo(
-            this.x + radius * Math.cos(this.absAngle) * Math.SQRT2,
-            this.y + radius * Math.sin(this.absAngle) * Math.SQRT2,
-          );
-          homeLizardContext.lineTo(
-            this.x + radius * Math.cos(Math.PI / 4 + this.absAngle),
-            this.y + radius * Math.sin(Math.PI / 4 + this.absAngle),
+            point.x + Math.cos(point.angle + Math.PI / 2) * tailWidth,
+            point.y + Math.sin(point.angle + Math.PI / 2) * tailWidth,
           );
           homeLizardContext.stroke();
-
-          if (!iterate) return;
-
-          for (let index = 0; index < this.children.length; index += 1) {
-            this.children[index].draw(true);
-          }
         }
+      }
+
+      function drawHomeLizardHead() {
+        const scale = HOME_LIZARD_CONFIG.scale;
+        const head = lizardState.renderPoints[0];
+        const neck = lizardState.renderPoints[2];
+        const angle = head.angle;
+        const snout = {
+          x: head.x + Math.cos(angle) * 9 * scale,
+          y: head.y + Math.sin(angle) * 9 * scale,
+        };
+        const skullBack = {
+          x: neck.x - Math.cos(angle) * 2 * scale,
+          y: neck.y - Math.sin(angle) * 2 * scale,
+        };
+        const leftJaw = {
+          x: neck.x + Math.cos(angle - Math.PI / 2) * 7 * scale,
+          y: neck.y + Math.sin(angle - Math.PI / 2) * 7 * scale,
+        };
+        const rightJaw = {
+          x: neck.x + Math.cos(angle + Math.PI / 2) * 7 * scale,
+          y: neck.y + Math.sin(angle + Math.PI / 2) * 7 * scale,
+        };
+        const leftEye = {
+          x: head.x + Math.cos(angle - Math.PI / 2) * 9 * scale,
+          y: head.y + Math.sin(angle - Math.PI / 2) * 9 * scale,
+        };
+        const rightEye = {
+          x: head.x + Math.cos(angle + Math.PI / 2) * 9 * scale,
+          y: head.y + Math.sin(angle + Math.PI / 2) * 9 * scale,
+        };
+
+        homeLizardContext.beginPath();
+        homeLizardContext.moveTo(snout.x, snout.y);
+        homeLizardContext.lineTo(leftEye.x, leftEye.y);
+        homeLizardContext.lineTo(leftJaw.x, leftJaw.y);
+        homeLizardContext.lineTo(skullBack.x, skullBack.y);
+        homeLizardContext.lineTo(rightJaw.x, rightJaw.y);
+        homeLizardContext.lineTo(rightEye.x, rightEye.y);
+        homeLizardContext.closePath();
+        homeLizardContext.stroke();
+
+        const eyeOffsetX = Math.cos(angle - Math.PI / 2) * 4.5 * scale;
+        const eyeOffsetY = Math.sin(angle - Math.PI / 2) * 4.5 * scale;
+
+        homeLizardContext.beginPath();
+        homeLizardContext.arc(
+          head.x + eyeOffsetX,
+          head.y + eyeOffsetY,
+          2.5 * scale,
+          0,
+          Math.PI * 2,
+        );
+        homeLizardContext.stroke();
+
+        homeLizardContext.beginPath();
+        homeLizardContext.arc(
+          head.x - eyeOffsetX,
+          head.y - eyeOffsetY,
+          2.5 * scale,
+          0,
+          Math.PI * 2,
+        );
+        homeLizardContext.stroke();
+
+        homeLizardContext.beginPath();
+        homeLizardContext.moveTo(snout.x, snout.y);
+        homeLizardContext.lineTo(skullBack.x, skullBack.y);
+        homeLizardContext.stroke();
+      }
+
+      function drawHomeLizardSkeleton() {
+        if (lizardState.renderPoints.length < 3) return;
+        drawHomeLizardLegs();
+        drawHomeLizardSpineAndRibs();
+        drawHomeLizardTail();
+        drawHomeLizardHead();
       }
 
       function initializeLizardCanvas() {
@@ -3136,22 +3746,20 @@
           lizardState.input.mouse.y = lizardState.anchor.y;
         }
 
-        setupLizard(
-          8 / Math.sqrt(lizardState.legCount),
-          lizardState.legCount,
-          lizardState.tailCount,
-        );
+        setupLizard();
         startLizardLoop();
       }
 
       function handleLizardPointerMove(event) {
         lizardState.input.mouse.x = event.clientX;
         lizardState.input.mouse.y = event.clientY;
+        lizardState.hasPointerTarget = true;
       }
 
       function handleLizardPointerDown(event) {
         lizardState.input.mouse.x = event.clientX;
         lizardState.input.mouse.y = event.clientY;
+        lizardState.hasPointerTarget = true;
         if (event.button === 0) lizardState.input.mouse.left = true;
         if (event.button === 1) lizardState.input.mouse.middle = true;
         if (event.button === 2) lizardState.input.mouse.right = true;
@@ -3173,6 +3781,14 @@
         if (event.keyCode >= 0 && event.keyCode < lizardState.input.keys.length) {
           lizardState.input.keys[event.keyCode] = false;
         }
+      }
+
+      function handleLizardTouch(event) {
+        const touch = event.touches[0];
+        if (!touch) return;
+        lizardState.input.mouse.x = touch.clientX;
+        lizardState.input.mouse.y = touch.clientY;
+        lizardState.hasPointerTarget = true;
       }
 
       function runLizardLoop(timestamp) {
@@ -3231,33 +3847,43 @@
           targetY = lizardState.parked.y;
         }
 
+        if (lizardState.mode === "active" && shouldUseHomeLizardCenterFallback()) {
+          const centerPoint = getHomeLizardCenterPoint();
+          targetX = centerPoint.x;
+          targetY = centerPoint.y;
+        }
+
+        const simulationSteps =
+          lizardState.mode === "entering"
+            ? 3
+            : lizardState.mode === "exiting" && exitProgress > 0.58
+              ? 2
+              : 1;
+
+        for (let stepIndex = 0; stepIndex < simulationSteps; stepIndex += 1) {
+          updateHomeLizardPhysics(targetX, targetY);
+        }
+
         homeLizardContext.save();
-        homeLizardContext.lineWidth = 1;
         homeLizardContext.lineCap = "round";
         homeLizardContext.lineJoin = "round";
-        homeLizardContext.strokeStyle = "rgba(255, 255, 255, 0.82)";
-        lizardState.critter.follow(targetX, targetY);
-        if (lizardState.mode === "entering") {
-          lizardState.critter.follow(targetX, targetY);
-          lizardState.critter.follow(targetX, targetY);
-        } else if (lizardState.mode === "exiting" && exitProgress > 0.58) {
-          lizardState.critter.follow(targetX, targetY);
-        }
+        homeLizardContext.strokeStyle = HOME_LIZARD_CONFIG.lineColor;
+        drawHomeLizardSkeleton();
         homeLizardContext.restore();
 
         const distanceToGoal = Math.hypot(
-          lizardState.critter.x - targetX,
-          lizardState.critter.y - targetY,
+          (lizardState.critter?.x ?? targetX) - targetX,
+          (lizardState.critter?.y ?? targetY) - targetY,
         );
         const bounds = measureLizardBounds();
 
-        if (lizardState.mode === "entering" && distanceToGoal < 24) {
+        if (lizardState.mode === "entering" && distanceToGoal < 42) {
           lizardState.mode = "active";
         }
 
         if (
           lizardState.mode === "exiting" &&
-          (bounds.maxY < -28 || (exitProgress >= 1 && distanceToGoal < 18))
+          (bounds.maxY < -56 || (exitProgress >= 1 && distanceToGoal < 28))
         ) {
           lizardState.mode = "parked";
           lizardState.renderVisible = false;
@@ -3268,82 +3894,66 @@
         updateLizardTextFracture();
       }
 
-      function setupLizard(size, legs, tail) {
+      function setupLizard() {
         const startPoint =
-          lizardState.mode === "active"
-            ? lizardState.anchor
-            : lizardState.parked;
-        const startX = startPoint.x;
-        const startY = startPoint.y;
-        const critter = new Creature(
-          startX,
-          startY,
-          0,
-          size * 12,
-          size * 1.6,
-          0.5,
-          16,
-          0.62,
-          0.07,
-          0.42,
-          0.24,
+          lizardState.points[0] ||
+          (lizardState.mode === "active" ? lizardState.anchor : lizardState.parked);
+        const startAngle = -Math.PI / 2;
+
+        lizardState.points = Array.from(
+          { length: HOME_LIZARD_CONFIG.segments },
+          (_, index) => ({
+            x: startPoint.x,
+            y: startPoint.y + index * HOME_LIZARD_CONFIG.segmentLength,
+            angle: startAngle,
+          }),
         );
+        lizardState.renderPoints = Array.from(
+          { length: HOME_LIZARD_CONFIG.segments },
+          (_, index) => ({
+            x: startPoint.x,
+            y: startPoint.y + index * HOME_LIZARD_CONFIG.segmentLength,
+            angle: startAngle,
+          }),
+        );
+        lizardState.legs = [
+          {
+            idx: HOME_LIZARD_CONFIG.frontLegIndex,
+            side: -1,
+            isFront: true,
+            pair: 0,
+          },
+          {
+            idx: HOME_LIZARD_CONFIG.frontLegIndex,
+            side: 1,
+            isFront: true,
+            pair: 1,
+          },
+          {
+            idx: HOME_LIZARD_CONFIG.backLegIndex,
+            side: -1,
+            isFront: false,
+            pair: 1,
+          },
+          {
+            idx: HOME_LIZARD_CONFIG.backLegIndex,
+            side: 1,
+            isFront: false,
+            pair: 0,
+          },
+        ].map((leg) => ({
+          ...leg,
+          foot: { x: startPoint.x, y: startPoint.y },
+          target: { x: startPoint.x, y: startPoint.y },
+          origin: { x: startPoint.x, y: startPoint.y },
+          stepProgress: 1,
+        }));
 
-        lizardState.segmentCount = 0;
-        lizardState.nodes = [critter];
-
-        let spinal = critter;
-        for (let index = 0; index < 6; index += 1) {
-          spinal = new Segment(spinal, size * 4, 0, (Math.PI * 2) / 3, 1.1);
-          for (let side = -1; side <= 1; side += 2) {
-            let node = new Segment(spinal, size * 3, side, 0.1, 2);
-            for (let joint = 0; joint < 3; joint += 1) {
-              node = new Segment(node, size * 0.1, -side * 0.1, 0.1, 2);
-            }
-          }
-        }
-
-        for (let legIndex = 0; legIndex < legs; legIndex += 1) {
-          if (legIndex > 0) {
-            for (let vertebra = 0; vertebra < 6; vertebra += 1) {
-              spinal = new Segment(spinal, size * 4, 0, 1.571, 1.5);
-              for (let side = -1; side <= 1; side += 2) {
-                let node = new Segment(spinal, size * 3, side * 1.571, 0.1, 1.5);
-                for (let rib = 0; rib < 3; rib += 1) {
-                  node = new Segment(node, size * 3, -side * 0.3, 0.1, 2);
-                }
-              }
-            }
-          }
-
-          for (let side = -1; side <= 1; side += 2) {
-            let node = new Segment(spinal, size * 12, side * 0.785, 0, 8);
-            node = new Segment(node, size * 16, -side * 0.785, 6.28, 1);
-            node = new Segment(node, size * 16, side * 1.571, 3.1415, 2);
-            for (let finger = 0; finger < 4; finger += 1) {
-              new Segment(node, size * 4, (finger / 3 - 0.5) * 1.571, 0.1, 4);
-            }
-            new LegSystem(node, 3, size * 12, critter);
-          }
-        }
-
-        for (let index = 0; index < tail; index += 1) {
-          spinal = new Segment(spinal, size * 4, 0, (Math.PI * 2) / 3, 1.1);
-          for (let side = -1; side <= 1; side += 2) {
-            let node = new Segment(spinal, size * 3, side, 0.1, 2);
-            for (let joint = 0; joint < 3; joint += 1) {
-              node = new Segment(
-                node,
-                (size * 3 * (tail - index)) / tail,
-                -side * 0.1,
-                0.1,
-                2,
-              );
-            }
-          }
-        }
-
-        lizardState.critter = critter;
+        lizardState.speed = 0;
+        lizardState.walkCycle = 0;
+        lizardState.critter = lizardState.points[0];
+        lizardState.nodes = getHomeLizardNodes();
+        syncHomeLizardLegs();
       }
 
       initializeLizardCanvas();
@@ -3557,7 +4167,6 @@
         state.pendingProjectPointerId = event.pointerId ?? null;
         markProjectDialInteraction();
         cancelProjectDialTween();
-        state.projectIdleRotationVelocity = 0;
         projectsOrbit.classList.remove("is-auto-rotating");
         state.isDialDragging = true;
         state.didDialDrag = false;
@@ -3638,7 +4247,6 @@
         event.preventDefault();
         markProjectDialInteraction();
         cancelProjectDialTween();
-        state.projectIdleRotationVelocity = 0;
         projectsOrbit.classList.remove("is-auto-rotating");
         beginWheelScrolling();
         const modeScale =
@@ -3739,9 +4347,7 @@
             : frontness;
           const x = snapProjectDialValue(centerX + radius * Math.cos(radians), isAutoRotating ? 1 : 0.25);
           const y = snapProjectDialValue(centerY + radius * Math.sin(radians), isAutoRotating ? 1 : 0.25);
-          const scale = isAutoRotating
-            ? snapProjectDialValue(0.84 + renderFrontness * 0.16, 0.02)
-            : 0.7 + renderFrontness * 0.48;
+          const scale = 1;
           const opacity = isAutoRotating
             ? snapProjectDialValue(0.28 + renderFrontness * 0.58, 0.03)
             : 0.14 + renderFrontness * 0.82;
@@ -3797,7 +4403,7 @@
           const introDuration = state.projectOrbitTweenDuration || 760;
           const elapsed = timestamp - state.projectOrbitIntroStartAt;
           const progress = Math.max(0, Math.min(1, elapsed / introDuration));
-          const eased = 1 - (1 - progress) ** 4;
+          const eased = easeInOutSine(progress);
           state.dialRotation =
             state.projectOrbitIntroFromRotation +
             (state.projectOrbitIntroToRotation - state.projectOrbitIntroFromRotation) * eased;
@@ -3806,34 +4412,10 @@
 
           if (progress >= 1) {
             cancelProjectDialTween();
-            projectsOrbit.classList.remove("is-auto-rotating");
           }
         } else if (canAnimateIntro) {
-          const idleFor = timestamp - state.lastProjectDialInteractionAt;
-          const idleStartDelay = 1480;
-          const idleRampDuration = 2400;
-          const rawRamp = clampValue((idleFor - idleStartDelay) / idleRampDuration, 0, 1);
-          const ramp = rawRamp * rawRamp * (3 - 2 * rawRamp);
-          state.projectIdleRotationPhase += dt;
-          const drift =
-            0.97 +
-            0.025 * Math.sin(state.projectIdleRotationPhase * 0.22 + 0.4) +
-            0.01 * Math.sin(state.projectIdleRotationPhase * 0.49 + 1.3);
-          const targetVelocity = state.idleProjectRotationSpeed * ramp * drift;
-          const velocityBlend = Math.min(1, dt * 1.35);
-          state.projectIdleRotationVelocity +=
-            (targetVelocity - state.projectIdleRotationVelocity) * velocityBlend;
-
-          if (Math.abs(state.projectIdleRotationVelocity) > 0.00035) {
-            state.dialRotation += state.projectIdleRotationVelocity * dt;
-            projectsOrbit.classList.add("is-auto-rotating");
-            updateProjectDial();
-          } else {
-            state.projectIdleRotationVelocity = 0;
-            projectsOrbit.classList.remove("is-auto-rotating");
-          }
+          projectsOrbit.classList.remove("is-auto-rotating");
         } else {
-          state.projectIdleRotationVelocity = 0;
           projectsOrbit.classList.remove("is-auto-rotating");
         }
 
@@ -3876,15 +4458,14 @@
         snapDialToRingIndex(state.activeRingIndex);
       }
 
-      function snapDialToRingIndex(ringIndex) {
+      function snapDialToRingIndex(ringIndex, duration = 460) {
         const normalizedRingIndex = modulo(ringIndex, PROJECT_RING.length);
         const angleStep = 360 / PROJECT_RING.length;
         const targetRotation = closestEquivalentRotation(
           180 - angleStep * normalizedRingIndex,
           state.dialRotation,
         );
-        scheduleProjectDialTween(targetRotation, 460);
-        state.projectIdleRotationVelocity = 0;
+        scheduleProjectDialTween(targetRotation, duration);
         state.activeRingIndex = normalizedRingIndex;
         state.activeProjectIndex = PROJECT_RING[normalizedRingIndex]?.projectIndex ?? 0;
         updateProjectDial();
