@@ -15,6 +15,12 @@
         --nav-light: rgba(255, 255, 255, 0.72);
         --nav-light-active: #ffffff;
         --nav-light-hover: rgba(255, 255, 255, 0.92);
+        --type-shadow-dark:
+          0 0.015em 0 rgba(255, 255, 255, 0.3),
+          0 0.04em 0.18em rgba(255, 255, 255, 0.08);
+        --type-shadow-light:
+          0 0.015em 0 rgba(0, 0, 0, 0.28),
+          0 0.04em 0.18em rgba(0, 0, 0, 0.08);
       }
 
       html,
@@ -29,6 +35,28 @@
       body {
         position: relative;
         font-family: "Pretendard", "Helvetica Neue", "Arial Nova", Arial, sans-serif;
+        font-kerning: normal;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern" 1, "liga" 1, "clig" 1;
+        font-synthesis: none;
+      }
+
+      .nav-button,
+      .contact-line,
+      .contact-kicker,
+      .about-kicker,
+      .about-lead,
+      .about-copy p,
+      .about-meta-label,
+      .about-meta-value,
+      .projects-node-title {
+        font-kerning: normal;
+        text-rendering: geometricPrecision;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern" 1, "liga" 1, "clig" 1;
       }
 
       svg {
@@ -55,24 +83,26 @@
         color: var(--nav-dark);
         font: inherit;
         font-size: clamp(1.6rem, 2.1vw, 2.2rem);
-        font-weight: 400;
-        letter-spacing: -0.03em;
+        font-weight: 450;
+        letter-spacing: -0.045em;
+        line-height: 0.92;
         cursor: pointer;
         transition: color 180ms ease, transform 180ms ease, opacity 180ms ease;
-        text-shadow:
-          0 1px 10px rgba(255, 255, 255, 0.18),
-          0 1px 10px rgba(0, 0, 0, 0.18);
+        text-shadow: var(--type-shadow-dark);
       }
 
       .nav-button-label {
         display: inline-flex;
         align-items: center;
+        pointer-events: none;
       }
 
       .nav-button-char {
         display: inline-block;
         transform: translate3d(0, 0, 0) rotate(0deg);
         transform-origin: 50% 60%;
+        pointer-events: none;
+        user-select: none;
         transition:
           transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
           opacity 220ms ease,
@@ -140,7 +170,7 @@
       .contact-panel {
         position: fixed;
         right: 48px;
-        top: 53%;
+        top: 49%;
         z-index: 3;
         display: grid;
         justify-items: end;
@@ -155,6 +185,103 @@
           transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
       }
 
+      .about-panel {
+        position: fixed;
+        right: 48px;
+        top: 50%;
+        z-index: 3;
+        display: grid;
+        gap: 18px;
+        width: min(640px, calc(100vw - 120px));
+        opacity: 0;
+        pointer-events: none;
+        transform: translate3d(72px, -50%, 0);
+        transition:
+          opacity 260ms ease,
+          transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .about-panel.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate3d(0, -50%, 0);
+      }
+
+      .about-card {
+        display: grid;
+        gap: 16px;
+        padding: 22px 24px 24px;
+        border: 1px solid rgba(17, 17, 17, 0.08);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.58)),
+          rgba(255, 255, 255, 0.64);
+        box-shadow:
+          0 12px 42px rgba(17, 17, 17, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.42);
+        backdrop-filter: blur(16px);
+      }
+
+      .about-kicker {
+        color: rgba(17, 17, 17, 0.58);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .about-lead {
+        margin: 0;
+        color: rgba(17, 17, 17, 0.92);
+        font-size: clamp(1.5rem, 2.6vw, 2.6rem);
+        font-weight: 560;
+        line-height: 0.92;
+        letter-spacing: -0.075em;
+        text-wrap: balance;
+        text-shadow: var(--type-shadow-dark);
+      }
+
+      .about-copy {
+        display: grid;
+        gap: 10px;
+        max-width: 34rem;
+      }
+
+      .about-copy p {
+        margin: 0;
+        color: rgba(17, 17, 17, 0.76);
+        font-size: clamp(0.98rem, 1.25vw, 1.08rem);
+        line-height: 1.46;
+        letter-spacing: -0.03em;
+      }
+
+      .about-meta {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .about-meta-item {
+        display: grid;
+        gap: 5px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(17, 17, 17, 0.1);
+      }
+
+      .about-meta-label {
+        color: rgba(17, 17, 17, 0.48);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .about-meta-value {
+        color: rgba(17, 17, 17, 0.86);
+        font-size: 0.94rem;
+        line-height: 1.26;
+        letter-spacing: -0.03em;
+      }
+
       .contact-dino-stage {
         position: fixed;
         left: 0;
@@ -164,11 +291,15 @@
         height: 290px;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 220ms ease;
+        transform: translate3d(-120px, 0, 0);
+        transition:
+          opacity 260ms ease,
+          transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
       }
 
       .contact-dino-stage.is-visible {
         opacity: 1;
+        transform: translate3d(0, 0, 0);
       }
 
       .contact-dino-canvas {
@@ -188,12 +319,12 @@
       .contact-line {
         color: rgba(17, 17, 17, 0.9);
         text-decoration: none;
+        font-family: "Pretendard", "Helvetica Neue", "Arial Nova", Arial, sans-serif;
         font-size: clamp(1.38rem, 2.6vw, 2.7rem);
-        line-height: 1.08;
+        font-weight: 500;
+        line-height: 0.95;
         letter-spacing: -0.03em;
-        text-shadow:
-          0 1px 10px rgba(255, 255, 255, 0.22),
-          0 1px 8px rgba(255, 255, 255, 0.12);
+        text-shadow: var(--type-shadow-dark);
       }
 
       .contact-line.is-link:hover,
@@ -205,35 +336,48 @@
 
       .contact-kicker {
         color: rgba(17, 17, 17, 0.9);
+        font-family: "Pretendard", "Helvetica Neue", "Arial Nova", Arial, sans-serif;
         font-size: clamp(1.38rem, 2.6vw, 2.7rem);
         font-weight: 700;
-        line-height: 1.08;
-        letter-spacing: -0.03em;
+        line-height: 0.95;
+        letter-spacing: -0.025em;
         text-transform: uppercase;
-        text-shadow:
-          0 1px 10px rgba(255, 255, 255, 0.22),
-          0 1px 8px rgba(255, 255, 255, 0.12);
+        text-shadow: var(--type-shadow-dark);
+      }
+
+      .contact-line + .contact-kicker {
+        margin-top: 0.38em;
       }
 
       .contact-text-label {
-        display: inline-flex;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        gap: 0;
+        display: inline-block;
+        width: max-content;
+        max-width: 100%;
+        margin-left: auto;
+        white-space: nowrap;
+        font-family: "Pretendard", "Helvetica Neue", "Arial Nova", Arial, sans-serif;
+        pointer-events: none;
       }
 
       .contact-text-char {
         display: inline-block;
         transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
         transform-origin: 50% 60%;
+        pointer-events: none;
+        user-select: none;
         transition:
           transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
           opacity 240ms ease,
           filter 240ms ease;
       }
 
+      .contact-text-char + .contact-text-char {
+        margin-left: -0.028em;
+      }
+
       .contact-text-char.is-space {
         width: 0.28em;
+        margin-left: 0;
       }
 
       .contact-panel.is-blasted .contact-text-char {
@@ -279,6 +423,9 @@
         transform-origin: 100% 50%;
         cursor: pointer;
         touch-action: manipulation;
+        backface-visibility: hidden;
+        -webkit-font-smoothing: antialiased;
+        will-change: transform, opacity;
         transition:
           left 360ms cubic-bezier(0.22, 1, 0.36, 1),
           top 360ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -309,24 +456,20 @@
 
       .projects-node[data-contrast="dark"] {
         color: rgba(17, 17, 17, 0.9);
-        text-shadow:
-          0 1px 10px rgba(255, 255, 255, 0.24),
-          0 1px 8px rgba(255, 255, 255, 0.12);
+        text-shadow: var(--type-shadow-dark);
       }
 
       .projects-node[data-contrast="light"] {
         color: rgba(255, 255, 255, 0.94);
-        text-shadow:
-          0 1px 10px rgba(0, 0, 0, 0.24),
-          0 1px 8px rgba(0, 0, 0, 0.12);
+        text-shadow: var(--type-shadow-light);
       }
 
       .projects-node-title {
         display: block;
         font-size: clamp(1.32rem, 2.15vw, 2.72rem);
-        font-weight: 600;
-        letter-spacing: -0.06em;
-        line-height: 0.92;
+        font-weight: 560;
+        letter-spacing: -0.085em;
+        line-height: 0.88;
         white-space: nowrap;
         pointer-events: none;
         user-select: none;
@@ -519,6 +662,19 @@
           gap: 12px;
         }
 
+        .about-panel {
+          right: 18px;
+          width: min(560px, calc(100vw - 36px));
+        }
+
+        .about-card {
+          padding: 18px 18px 20px;
+        }
+
+        .about-meta {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .contact-dino-stage {
           height: 240px;
         }
@@ -569,6 +725,31 @@
           transform: translate3d(0, 0, 0);
         }
 
+        .about-panel {
+          right: 14px;
+          top: auto;
+          bottom: 154px;
+          width: min(340px, calc(100vw - 28px));
+          transform: translate3d(40px, 0, 0);
+        }
+
+        .about-panel.is-visible {
+          transform: translate3d(0, 0, 0);
+        }
+
+        .about-lead {
+          font-size: 1.46rem;
+        }
+
+        .about-copy p {
+          font-size: 0.94rem;
+        }
+
+        .about-meta {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
         .contact-line {
           font-size: 1rem;
         }
@@ -607,6 +788,7 @@
       <button class="nav-button" data-section="about" type="button">About</button>
       <button class="nav-button" data-section="contact" type="button">Contact</button>
     </nav>
+    <section class="about-panel" id="about-panel" aria-hidden="true"></section>
     <section class="contact-panel" id="contact-panel" aria-hidden="true">
       <div class="contact-kicker">Contact</div>
       <a class="contact-line is-link" href="mailto:shimseunggi@naver.com">shimseunggi@naver.com</a>
@@ -646,9 +828,12 @@
       const homeNavButton = navButtons.find((button) => button.dataset.section === "home");
       const contactNavButton = navButtons.find((button) => button.dataset.section === "contact");
       const navFractureState = new WeakMap();
+      const navButtonLayoutCache = new WeakMap();
       const contactTextFractureState = new WeakMap();
+      const contactTextLayoutCache = new WeakMap();
       const projectsOrbit = document.querySelector("#projects-orbit");
       const projectsDial = document.querySelector("#projects-dial");
+      const aboutPanel = document.querySelector("#about-panel");
       const contactPanel = document.querySelector("#contact-panel");
       const contactDinoStage = document.querySelector("#contact-dino-stage");
       const contactDinoCanvas = document.querySelector("#contact-dino-canvas");
@@ -661,6 +846,7 @@
 
       const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
       const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".m4v", ".ogv"];
+      const NAV_SCRAMBLE_GLYPHS = "₩0123456789-=abcdefghijklmnopqrstuvwxyz";
       const CONVENTIONAL_MEDIA = [
         "background/background.mp4",
         "background/background.webm",
@@ -707,6 +893,7 @@
         rafId: 0,
         lastRenderAt: 0,
         projectNodes: [],
+        contactTextItems: [],
         activeProjectIndex: 0,
         activeRingIndex: 0,
         dialRotation: 8,
@@ -721,12 +908,32 @@
         projectOrbitIntroStartAt: 0,
         projectOrbitIntroFromRotation: 0,
         projectOrbitIntroToRotation: 0,
+        projectOrbitTweenDuration: 760,
+        projectIdleRotationVelocity: 0,
+        projectIdleRotationPhase: 0,
+        lastProjectDialInteractionAt: 0,
+        projectContrastSampleAt: 0,
+        projectContrastInterval: 140,
+        projectDialLayout: null,
+        idleProjectRotationSpeed: 0.48,
+        pendingProjectRingIndex: -1,
+        pendingProjectPointerId: null,
         stickerVisible: false,
+        navIntroScramblePlayed: false,
+        navIntroScrambleRunning: false,
+        navIntroScrambleRafId: 0,
+        navIntroScrambleTimerId: 0,
+        contactIntroScrambleRafId: 0,
+        contactIntroScrambleTimerId: 0,
+        contactSignalEffectEnabled: true,
+        lizardSignalEffectEnabled: true,
       };
 
       const lizardState = {
         width: 0,
         height: 0,
+        dpr: 1,
+        maxDpr: 1.5,
         input: {
           keys: Array.from({ length: 230 }, () => false),
           mouse: {
@@ -738,17 +945,22 @@
           },
         },
         critter: null,
+        nodes: [],
         segmentCount: 0,
         legCount: 4,
         tailCount: 12,
         anchor: { x: 0, y: 0 },
         parked: { x: 0, y: 0 },
+        exitOrigin: { x: 0, y: 0 },
         mode: "parked",
         renderVisible: false,
         time: 0,
+        exitStartedAt: 0,
+        exitTravelMs: 760,
         frameInterval: 33,
         lastFrameAt: 0,
         rafId: 0,
+        running: false,
         visible: false,
       };
       const renderConfig = {
@@ -780,10 +992,14 @@
       prepareContactTextLetters();
 
       window.addEventListener("beforeunload", cleanupSource);
+      window.addEventListener("pageshow", queueNavIntroScramble, { once: true });
       window.addEventListener("resize", () => {
+        invalidateNavFractureMetrics();
+        invalidateContactTextMetrics();
         resizeLizardCanvas();
         positionContactPanel();
         resizeContactDinoCanvas();
+        updateProjectDialLayout();
         updateNavButtonContrast(state.lastFrame);
         updateProjectDial(true);
       });
@@ -797,6 +1013,19 @@
       window.addEventListener("pointermove", handleContactDinoPointerMove, { passive: true });
       window.addEventListener("pointerdown", handleContactDinoPointerDown, { passive: true });
       window.addEventListener("pointerup", handleContactDinoPointerUp, { passive: true });
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      if (document.fonts?.ready) {
+        document.fonts.ready.then(() => {
+          invalidateNavFractureMetrics();
+          invalidateContactTextMetrics();
+          updateHomeLizardAnchors();
+          updateProjectDialLayout();
+          if (shouldKeepLizardLoopRunning()) {
+            startLizardLoop();
+          }
+        });
+      }
 
       navButtons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -1083,6 +1312,7 @@
 
       function updateSectionPanels(previousSection = "") {
         const showProjects = state.activeSection === "projects";
+        const showAbout = state.activeSection === "about";
         const showContact = state.activeSection === "contact";
         positionContactPanel();
         projectsOrbit.classList.toggle("is-visible", showProjects);
@@ -1092,17 +1322,20 @@
           node.disabled = !showProjects;
           node.tabIndex = showProjects ? 0 : -1;
         });
+        aboutPanel.classList.toggle("is-visible", showAbout);
+        aboutPanel.setAttribute("aria-hidden", String(!showAbout));
         contactPanel.classList.toggle("is-visible", showContact);
         contactPanel.setAttribute("aria-hidden", String(!showContact));
+        if (showContact && previousSection !== "contact") {
+          queueContactIntroScramble();
+        }
         lizardState.visible = state.activeSection === "home";
         if (showProjects && previousSection !== "projects") {
-          state.projectOrbitIntroStartAt = 0;
-          state.projectOrbitIntroFromRotation = state.dialRotation;
-          state.projectOrbitIntroToRotation = state.dialRotation + 7.5;
+          state.lastProjectDialInteractionAt = performance.now();
+          scheduleProjectDialTween(state.dialRotation + 4.5, 720);
         } else if (!showProjects) {
-          state.projectOrbitIntroStartAt = 0;
-          state.projectOrbitIntroFromRotation = state.dialRotation;
-          state.projectOrbitIntroToRotation = state.dialRotation;
+          cancelProjectDialTween();
+          state.projectIdleRotationVelocity = 0;
           projectsOrbit.classList.remove("is-auto-rotating");
         }
         updateHomeLizardState(previousSection);
@@ -1720,9 +1953,15 @@
           ? Math.min(0.033, (now - contactDinoState.lastAt) / 1000)
           : 0.016;
         contactDinoState.lastAt = now;
-        updateContactDino(dt);
-        renderContactDino();
-        updateContactTextBlast();
+        try {
+          updateContactDino(dt);
+          renderContactDino();
+          updateContactTextBlast();
+        } catch (error) {
+          console.error("Contact dino loop failed:", error);
+          state.contactSignalEffectEnabled = false;
+          restoreContactEffectText();
+        }
         contactDinoState.rafId = window.requestAnimationFrame(runContactDinoLoop);
       }
 
@@ -1737,23 +1976,85 @@
           const label = document.createElement("span");
           label.className = "nav-button-label";
           label.setAttribute("aria-hidden", "true");
+          const charNodes = [];
 
           [...text].forEach((character, index) => {
             const char = document.createElement("span");
             char.className = `nav-button-char${character === " " ? " is-space" : ""}`;
             char.textContent = character === " " ? "\u00a0" : character;
+            char.dataset.char = character;
             char.style.setProperty("--fracture-index", String(index));
             label.append(char);
+            charNodes.push(char);
           });
 
           button.textContent = "";
           button.append(label);
-          navFractureState.set(button, { intensity: 0, impactX: 0, impactY: 0 });
+          button._navChars = charNodes;
+          navFractureState.set(button, { intensity: 0, impactX: 0, impactY: 0, active: false });
+        });
+
+        invalidateNavFractureMetrics();
+      }
+
+      function queueNavIntroScramble() {
+        if (state.navIntroScramblePlayed || state.navIntroScrambleRunning) return;
+
+        if (state.navIntroScrambleTimerId) {
+          window.clearTimeout(state.navIntroScrambleTimerId);
+          state.navIntroScrambleTimerId = 0;
+        }
+
+        const start = () => {
+          state.navIntroScrambleTimerId = 0;
+          if (state.navIntroScramblePlayed || state.navIntroScrambleRunning) return;
+          runNavIntroScramble();
+        };
+
+        const schedule = () => {
+          state.navIntroScrambleTimerId = window.setTimeout(() => {
+            window.requestAnimationFrame(start);
+          }, 260);
+        };
+
+        if (document.fonts?.ready) {
+          document.fonts.ready.then(schedule);
+          return;
+        }
+
+        schedule();
+      }
+
+      function runNavIntroScramble() {
+        if (state.navIntroScramblePlayed || state.navIntroScrambleRunning) return;
+
+        const labels = navButtons
+          .map((button) => getNavButtonChars(button))
+          .filter((chars) => chars.length);
+
+        if (!labels.length) return;
+
+        state.navIntroScrambleRunning = true;
+        state.navIntroScrambleRafId = scrambleCharacterGroups(labels, {
+          groupDelay: 72,
+          scrambleWindow: 360,
+          revealStep: 28,
+          initialStride: 5,
+          setFrameId: (frameId) => {
+            state.navIntroScrambleRafId = frameId;
+          },
+          onComplete: () => {
+            state.navIntroScramblePlayed = true;
+            state.navIntroScrambleRunning = false;
+            state.navIntroScrambleRafId = 0;
+            invalidateNavFractureMetrics();
+          },
         });
       }
 
       function prepareContactTextLetters() {
         const items = contactPanel.querySelectorAll(".contact-line, .contact-kicker");
+        state.contactTextItems = [...items];
         items.forEach((item) => {
           if (item.dataset.blastReady === "true") return;
 
@@ -1762,91 +2063,441 @@
           const label = document.createElement("span");
           label.className = "contact-text-label";
           label.setAttribute("aria-hidden", "true");
+          const charNodes = [];
 
           [...text].forEach((character) => {
             const char = document.createElement("span");
             char.className = `contact-text-char${character === " " ? " is-space" : ""}`;
             char.textContent = character === " " ? "\u00a0" : character;
+            char.dataset.char = character;
             label.append(char);
+            charNodes.push(char);
           });
 
           item.setAttribute("aria-label", text);
           item.textContent = "";
           item.append(label);
-          contactTextFractureState.set(item, { intensity: 0, impactX: 0, impactY: 0 });
+          item._contactChars = charNodes;
+          contactTextFractureState.set(item, {
+            intensity: 0,
+            impactX: 0,
+            impactY: 0,
+            active: false,
+          });
         });
       }
 
-      function setContactTextBlast(item, intensity, impactX, impactY) {
-        const chars = item.querySelectorAll(".contact-text-char");
-        if (!chars.length) return;
+      function getNavButtonChars(button) {
+        if (button._navChars) return button._navChars;
+        button._navChars = [...button.querySelectorAll(".nav-button-char")];
+        return button._navChars;
+      }
 
-        if (intensity < 0.03) {
-          item.classList.remove("is-blasted");
-          chars.forEach((char) => {
-            char.style.removeProperty("--contact-blast-x");
-            char.style.removeProperty("--contact-blast-y");
-            char.style.removeProperty("--contact-blast-rotate");
-            char.style.removeProperty("--contact-blast-opacity");
-            char.style.removeProperty("--contact-blast-blur");
-            char.style.removeProperty("--contact-blast-scale");
-          });
-          return;
+      function getContactTextChars(item) {
+        if (item._contactChars) return item._contactChars;
+        item._contactChars = [...item.querySelectorAll(".contact-text-char")];
+        return item._contactChars;
+      }
+
+      function setNodeTextValue(node, value) {
+        if (node.__displayText === value) return;
+        node.textContent = value;
+        node.__displayText = value;
+      }
+
+      function setNodeStyleValue(node, property, value) {
+        if (!node.__styleValueCache) {
+          node.__styleValueCache = Object.create(null);
         }
 
-        item.classList.add("is-blasted");
-        chars.forEach((char, index) => {
-          if (char.classList.contains("is-space")) {
-            char.style.setProperty("--contact-blast-x", "0px");
-            char.style.setProperty("--contact-blast-y", "0px");
-            char.style.setProperty("--contact-blast-rotate", "0deg");
-            char.style.setProperty("--contact-blast-opacity", "1");
-            char.style.setProperty("--contact-blast-blur", "0px");
-            char.style.setProperty("--contact-blast-scale", "1");
+        if (node.__styleValueCache[property] === value) return;
+        node.style.setProperty(property, value);
+        node.__styleValueCache[property] = value;
+      }
+
+      function clearNodeStyleValue(node, property) {
+        if (!node.__styleValueCache || !(property in node.__styleValueCache)) return;
+        node.style.removeProperty(property);
+        delete node.__styleValueCache[property];
+      }
+
+      function getStaticCharValue(node) {
+        return node.classList.contains("is-space") ? "\u00a0" : node.dataset.char || "";
+      }
+
+      function resetContactTextNode(node) {
+        setNodeTextValue(node, getStaticCharValue(node));
+        clearNodeStyleValue(node, "--contact-blast-x");
+        clearNodeStyleValue(node, "--contact-blast-y");
+        clearNodeStyleValue(node, "--contact-blast-rotate");
+        clearNodeStyleValue(node, "--contact-blast-opacity");
+        clearNodeStyleValue(node, "--contact-blast-blur");
+        clearNodeStyleValue(node, "--contact-blast-scale");
+      }
+
+      function resetNavTextNode(node) {
+        setNodeTextValue(node, getStaticCharValue(node));
+        clearNodeStyleValue(node, "--fracture-x");
+        clearNodeStyleValue(node, "--fracture-y");
+        clearNodeStyleValue(node, "--fracture-rotate");
+        clearNodeStyleValue(node, "--fracture-opacity");
+        clearNodeStyleValue(node, "--fracture-blur");
+      }
+
+      function queueContactIntroScramble() {
+        if (!state.contactTextItems.length) return;
+
+        if (state.contactIntroScrambleTimerId) {
+          window.clearTimeout(state.contactIntroScrambleTimerId);
+          state.contactIntroScrambleTimerId = 0;
+        }
+
+        if (state.contactIntroScrambleRafId) {
+          window.cancelAnimationFrame(state.contactIntroScrambleRafId);
+          state.contactIntroScrambleRafId = 0;
+        }
+
+        state.contactTextItems.forEach((item) => {
+          getContactTextChars(item).forEach((char) => {
+            if (char.classList.contains("is-space")) return;
+            setNodeTextValue(char, char.dataset.char || "");
+          });
+        });
+
+        state.contactIntroScrambleTimerId = window.setTimeout(() => {
+          state.contactIntroScrambleTimerId = 0;
+          runContactIntroScramble();
+        }, 120);
+      }
+
+      function runContactIntroScramble() {
+        const groups = state.contactTextItems
+          .map((item) => getContactTextChars(item))
+          .filter((chars) => chars.length);
+
+        if (!groups.length) return;
+
+        state.contactIntroScrambleRafId = scrambleCharacterGroups(groups, {
+          groupDelay: 56,
+          scrambleWindow: 300,
+          revealStep: 24,
+          initialStride: 4,
+          setFrameId: (frameId) => {
+            state.contactIntroScrambleRafId = frameId;
+          },
+          onComplete: () => {
+            state.contactIntroScrambleRafId = 0;
+          },
+        });
+      }
+
+      function scrambleCharacterGroups(
+        groups,
+        {
+          groupDelay = 72,
+          scrambleWindow = 360,
+          revealStep = 28,
+          initialStride = 5,
+          cycleStep = 34,
+          setFrameId = null,
+          onComplete,
+        } = {},
+      ) {
+        const entries = groups
+          .filter((chars) => chars.length)
+          .map((chars, groupIndex) => ({
+            chars,
+            revealStart: groupIndex * groupDelay,
+            revealRanks: getScrambleRevealRanks(chars),
+            revealCount: chars.filter((char) => !char.classList.contains("is-space")).length,
+          }));
+
+        if (!entries.length) {
+          onComplete?.();
+          return 0;
+        }
+
+        const startedAt = performance.now();
+
+        entries.forEach(({ chars }, groupIndex) => {
+          chars.forEach((char, index) => {
+            if (char.classList.contains("is-space")) return;
+            setNodeTextValue(char, char.dataset.char || "");
+            setNodeStyleValue(char, "opacity", "0");
+          });
+        });
+
+        const tick = (now) => {
+          let doneCount = 0;
+
+          entries.forEach(({ chars, revealStart, revealRanks, revealCount: totalRevealCount }) => {
+            const elapsed = now - startedAt - revealStart;
+
+            chars.forEach((char, index) => {
+              if (char.classList.contains("is-space")) return;
+
+              const original = char.dataset.char || "";
+              const revealRank = revealRanks[index];
+              const revealAt = Math.max(0, revealRank) * revealStep;
+              const localElapsed = elapsed - revealAt;
+
+              if (localElapsed < 0) {
+                setNodeTextValue(char, original);
+                setNodeStyleValue(char, "opacity", "0");
+                return;
+              }
+
+              setNodeStyleValue(char, "opacity", "1");
+
+              if (localElapsed >= scrambleWindow) {
+                setNodeTextValue(char, original);
+                return;
+              }
+
+              const sequenceOffset = Math.max(
+                0,
+                Math.floor(localElapsed / Math.max(12, cycleStep)),
+              );
+              const glyphIndex =
+                (revealStart + index * initialStride + sequenceOffset) %
+                NAV_SCRAMBLE_GLYPHS.length;
+              setNodeTextValue(char, NAV_SCRAMBLE_GLYPHS[glyphIndex]);
+            });
+
+            const lastRevealRank = totalRevealCount - 1;
+            if (elapsed >= scrambleWindow + Math.max(0, lastRevealRank) * revealStep) {
+              doneCount += 1;
+            }
+          });
+
+          if (doneCount >= entries.length) {
+            entries.forEach(({ chars }) => {
+              chars.forEach((char) => {
+                if (char.classList.contains("is-space")) return;
+                setNodeTextValue(char, char.dataset.char || "");
+                clearNodeStyleValue(char, "opacity");
+              });
+            });
+            onComplete?.();
             return;
           }
 
-          const rect = char.getBoundingClientRect();
-          const centerX = rect.left + rect.width * 0.5;
-          const centerY = rect.top + rect.height * 0.5;
+          const nextFrameId = window.requestAnimationFrame(tick);
+          setFrameId?.(nextFrameId);
+        };
+
+        const firstFrameId = window.requestAnimationFrame(tick);
+        setFrameId?.(firstFrameId);
+        return firstFrameId;
+      }
+
+      function getScrambleRevealRanks(chars) {
+        const nonSpaceChars = chars.filter((char) => !char.classList.contains("is-space"));
+        const revealRanks = new Array(chars.length).fill(-1);
+        if (!nonSpaceChars.length) return revealRanks;
+
+        const firstRect = nonSpaceChars[0].getBoundingClientRect();
+        const lastRect = nonSpaceChars[nonSpaceChars.length - 1].getBoundingClientRect();
+        const leftDistance = firstRect.left;
+        const rightDistance = window.innerWidth - lastRect.right;
+        const leftToRight = leftDistance <= rightDistance;
+
+        let seen = 0;
+        chars.forEach((char, index) => {
+          if (char.classList.contains("is-space")) return;
+          revealRanks[index] = leftToRight ? seen : nonSpaceChars.length - 1 - seen;
+          seen += 1;
+        });
+
+        return revealRanks;
+      }
+
+      function getScrambleTargetIndex(character) {
+        if (!character) return -1;
+        return NAV_SCRAMBLE_GLYPHS.indexOf(character.toLowerCase());
+      }
+
+      function getScrambleProgressChar(character, step) {
+        if (!character) return "";
+
+        const targetIndex = getScrambleTargetIndex(character);
+        if (targetIndex < 0) {
+          return character;
+        }
+
+        const isUppercase =
+          character.toUpperCase() === character && character.toLowerCase() !== character;
+        const glyph = NAV_SCRAMBLE_GLYPHS[clampValue(step, 0, targetIndex)] || character;
+
+        if (isUppercase && glyph >= "a" && glyph <= "z") {
+          return glyph.toUpperCase();
+        }
+
+        return glyph;
+      }
+
+      function resolveSignalScrambleChar(original, index, signal, timeSource, sequenceOffset = 0) {
+        if (!original) return "";
+
+        const normalizedSignal = clampValue(signal, 0, 1);
+        if (normalizedSignal < 0.08) {
+          return original;
+        }
+
+        const targetIndex = getScrambleTargetIndex(original);
+        if (targetIndex <= 0) {
+          return original;
+        }
+
+        const frame = Math.floor(timeSource / 96);
+        const cycleLength = targetIndex + 3;
+        const cycleStep = (frame + sequenceOffset + index) % cycleLength;
+
+        if (cycleStep > targetIndex) {
+          return original;
+        }
+
+        const visibleDepth = Math.max(1, Math.round(normalizedSignal * (targetIndex + 1)));
+        return getScrambleProgressChar(original, Math.min(cycleStep, visibleDepth - 1));
+      }
+
+      function restoreContactEffectText() {
+        state.contactTextItems.forEach((item) => {
+          item.classList.remove("is-blasted");
+          getContactTextChars(item).forEach(resetContactTextNode);
+          const blast = contactTextFractureState.get(item);
+          if (blast) blast.active = false;
+        });
+      }
+
+      function restoreNavEffectText() {
+        navButtons.forEach((button) => {
+          button.classList.remove("is-fractured");
+          getNavButtonChars(button).forEach(resetNavTextNode);
+          const fracture = navFractureState.get(button);
+          if (fracture) fracture.active = false;
+        });
+      }
+
+      function invalidateContactTextMetrics() {
+        state.contactTextItems.forEach((item) => {
+          contactTextLayoutCache.delete(item);
+        });
+      }
+
+      function getContactTextMetrics(item) {
+        const cached = contactTextLayoutCache.get(item);
+        if (cached) return cached;
+
+        const itemRect = item.getBoundingClientRect();
+        const chars = getContactTextChars(item).map((char, index) => {
+          const charRect = char.getBoundingClientRect();
+          return {
+            node: char,
+            index,
+            isSpace: char.classList.contains("is-space"),
+            centerOffsetX: charRect.left + charRect.width * 0.5 - itemRect.left,
+            centerOffsetY: charRect.top + charRect.height * 0.5 - itemRect.top,
+          };
+        });
+
+        const metrics = { chars };
+        contactTextLayoutCache.set(item, metrics);
+        return metrics;
+      }
+
+      function setContactTextBlast(
+        item,
+        intensity,
+        impactX,
+        impactY,
+        metrics = null,
+        itemRect = null,
+      ) {
+        if (intensity < 0.03) {
+          item.classList.remove("is-blasted");
+          getContactTextChars(item).forEach(resetContactTextNode);
+          return;
+        }
+
+        const activeMetrics = metrics || getContactTextMetrics(item);
+        if (!activeMetrics.chars.length) return;
+
+        item.classList.add("is-blasted");
+        const activeRect = itemRect || item.getBoundingClientRect();
+        activeMetrics.chars.forEach(({ node, index, isSpace, centerOffsetX, centerOffsetY }) => {
+          if (isSpace) {
+            setNodeTextValue(node, "\u00a0");
+            setNodeStyleValue(node, "--contact-blast-x", "0px");
+            setNodeStyleValue(node, "--contact-blast-y", "0px");
+            setNodeStyleValue(node, "--contact-blast-rotate", "0deg");
+            setNodeStyleValue(node, "--contact-blast-opacity", "1");
+            setNodeStyleValue(node, "--contact-blast-blur", "0px");
+            setNodeStyleValue(node, "--contact-blast-scale", "1");
+            return;
+          }
+
+          const centerX = activeRect.left + centerOffsetX;
+          const centerY = activeRect.top + centerOffsetY;
           const dx = centerX - impactX;
           const dy = centerY - impactY;
           const distance = Math.hypot(dx, dy) || 1;
           const reach = 110 + intensity * 36;
           const falloff = Math.max(0, 1 - distance / reach);
-          const push = intensity * falloff * (18 + (index % 3) * 3);
-          const jitter = Math.sin(contactDinoState.lastAt * 0.02 + index * 1.7) * intensity * 1.4;
-          const offsetX = (dx / distance) * push + jitter;
-          const offsetY = (dy / distance) * push * 0.78 - intensity * falloff * 2.2;
-          const rotate = ((dx * 0.04 + dy * 0.02) / Math.max(12, distance)) * intensity * 46;
-          const blur = Math.max(0, intensity * falloff * 0.18);
-          const opacity = Math.max(0.2, 1 - intensity * falloff * 0.1);
-          const scale = 1 + intensity * falloff * 0.08;
-          char.style.setProperty("--contact-blast-x", `${offsetX.toFixed(2)}px`);
-          char.style.setProperty("--contact-blast-y", `${offsetY.toFixed(2)}px`);
-          char.style.setProperty("--contact-blast-rotate", `${rotate.toFixed(2)}deg`);
-          char.style.setProperty("--contact-blast-opacity", opacity.toFixed(2));
-          char.style.setProperty("--contact-blast-blur", `${blur.toFixed(2)}px`);
-          char.style.setProperty("--contact-blast-scale", `${scale.toFixed(3)}`);
+          const signal = clampValue((intensity / 5.4) * falloff * 1.65, 0, 1);
+          setNodeTextValue(node, resolveSignalScrambleChar(
+            node.dataset.char || "",
+            index,
+            signal,
+            contactDinoState.lastAt,
+            Math.round(distance * 0.08),
+          ));
+          setNodeStyleValue(node, "--contact-blast-x", "0px");
+          setNodeStyleValue(node, "--contact-blast-y", "0px");
+          setNodeStyleValue(node, "--contact-blast-rotate", "0deg");
+          setNodeStyleValue(node, "--contact-blast-opacity", `${(1 - signal * 0.08).toFixed(2)}`);
+          setNodeStyleValue(node, "--contact-blast-blur", "0px");
+          setNodeStyleValue(node, "--contact-blast-scale", "1");
         });
       }
 
       function updateContactTextBlast() {
-        const items = contactPanel.querySelectorAll(".contact-line, .contact-kicker");
+        if (!state.contactSignalEffectEnabled) {
+          restoreContactEffectText();
+          return;
+        }
+
+        const items = state.contactTextItems;
         const active = state.activeSection === "contact" && contactDinoState.waveRadius > 0;
+        let hasVisibleBlast = false;
 
         items.forEach((item) => {
           const blast =
-            contactTextFractureState.get(item) || { intensity: 0, impactX: 0, impactY: 0 };
+            contactTextFractureState.get(item) || { intensity: 0, impactX: 0, impactY: 0, active: false };
 
           if (!active) {
+            if (blast.intensity < 0.03 && !blast.active) {
+              return;
+            }
             blast.intensity += (0 - blast.intensity) * 0.18;
+            if (blast.intensity < 0.03) {
+              blast.intensity = 0;
+              if (blast.active) {
+                setContactTextBlast(item, 0, blast.impactX, blast.impactY);
+                blast.active = false;
+              }
+              contactTextFractureState.set(item, blast);
+              return;
+            }
             setContactTextBlast(item, blast.intensity, blast.impactX, blast.impactY);
+            blast.active = true;
+            hasVisibleBlast = true;
             contactTextFractureState.set(item, blast);
             return;
           }
 
           const rect = item.getBoundingClientRect();
+          const metrics = getContactTextMetrics(item);
           const centerX = rect.left + rect.width * 0.5;
           const centerY = rect.top + rect.height * 0.5;
           const distance = Math.hypot(
@@ -1863,11 +2514,23 @@
             (targetIntensity > blast.intensity ? 0.24 : 0.14);
           blast.impactX += (contactDinoState.snoutViewport.x - blast.impactX) * 0.24;
           blast.impactY += (contactDinoState.snoutViewport.y - blast.impactY) * 0.24;
-          setContactTextBlast(item, blast.intensity, blast.impactX, blast.impactY);
+          if (blast.intensity < 0.03) {
+            blast.intensity = 0;
+            if (blast.active) {
+              setContactTextBlast(item, 0, blast.impactX, blast.impactY);
+              blast.active = false;
+            }
+            contactTextFractureState.set(item, blast);
+            return;
+          }
+
+          setContactTextBlast(item, blast.intensity, blast.impactX, blast.impactY, metrics, rect);
+          blast.active = true;
+          hasVisibleBlast = true;
           contactTextFractureState.set(item, blast);
         });
 
-        contactPanel.classList.toggle("is-blasted", active);
+        contactPanel.classList.toggle("is-blasted", hasVisibleBlast);
       }
 
       function getHomeLizardAnchorPoint() {
@@ -1918,126 +2581,166 @@
           if (previousSection !== "home" || lizardState.mode === "parked") {
             lizardState.mode = "entering";
           }
+          lizardState.exitStartedAt = 0;
+          startLizardLoop();
           return;
         }
 
         if (previousSection === "home" || lizardState.mode === "active" || lizardState.mode === "entering") {
           lizardState.renderVisible = true;
           lizardState.mode = "exiting";
+          lizardState.exitOrigin.x = lizardState.critter?.x ?? lizardState.anchor.x;
+          lizardState.exitOrigin.y = lizardState.critter?.y ?? lizardState.anchor.y;
+          lizardState.exitStartedAt = performance.now();
           homeLizardStage.classList.add("is-visible");
+          startLizardLoop();
           return;
         }
 
         if (lizardState.mode === "parked") {
           lizardState.renderVisible = false;
           homeLizardStage.classList.remove("is-visible");
+          lizardState.exitStartedAt = 0;
         }
       }
 
-      function setButtonFracture(button, intensity, impactX, impactY) {
-        const chars = button.querySelectorAll(".nav-button-char");
-        if (!chars.length) return;
+      function invalidateNavFractureMetrics() {
+        navButtons.forEach((button) => {
+          navButtonLayoutCache.delete(button);
+        });
+      }
 
+      function getButtonFractureMetrics(button) {
+        const cached = navButtonLayoutCache.get(button);
+        if (cached) return cached;
+
+        const rect = button.getBoundingClientRect();
+        const chars = getNavButtonChars(button).map((char) => {
+          const charRect = char.getBoundingClientRect();
+          return {
+            node: char,
+            index: Number.parseInt(char.style.getPropertyValue("--fracture-index"), 10) || 0,
+            isSpace: char.classList.contains("is-space"),
+            centerX: charRect.left + charRect.width * 0.5,
+            centerY: charRect.top + charRect.height * 0.5,
+          };
+        });
+
+        const metrics = { rect, chars };
+        navButtonLayoutCache.set(button, metrics);
+        return metrics;
+      }
+
+      function setButtonFracture(button, intensity, impactX, impactY, metrics = null) {
         if (intensity < 0.04) {
           button.classList.remove("is-fractured");
-          chars.forEach((char) => {
-            char.style.removeProperty("--fracture-x");
-            char.style.removeProperty("--fracture-y");
-            char.style.removeProperty("--fracture-rotate");
-            char.style.removeProperty("--fracture-opacity");
-            char.style.removeProperty("--fracture-blur");
-          });
+          getNavButtonChars(button).forEach(resetNavTextNode);
           return;
         }
 
+        const activeMetrics = metrics || getButtonFractureMetrics(button);
+        if (!activeMetrics.chars.length) return;
+
         button.classList.add("is-fractured");
-        chars.forEach((char, index) => {
-          if (char.classList.contains("is-space")) {
-            char.style.setProperty("--fracture-x", "0px");
-            char.style.setProperty("--fracture-y", "0px");
-            char.style.setProperty("--fracture-rotate", "0deg");
-            char.style.setProperty("--fracture-opacity", "1");
-            char.style.setProperty("--fracture-blur", "0px");
+        activeMetrics.chars.forEach(({ node, index, isSpace, centerX, centerY }) => {
+          if (isSpace) {
+            setNodeTextValue(node, "\u00a0");
+            setNodeStyleValue(node, "--fracture-x", "0px");
+            setNodeStyleValue(node, "--fracture-y", "0px");
+            setNodeStyleValue(node, "--fracture-rotate", "0deg");
+            setNodeStyleValue(node, "--fracture-opacity", "1");
+            setNodeStyleValue(node, "--fracture-blur", "0px");
             return;
           }
 
-          const rect = char.getBoundingClientRect();
-          const centerX = rect.left + rect.width * 0.5;
-          const centerY = rect.top + rect.height * 0.5;
           const dx = centerX - impactX;
           const dy = centerY - impactY;
           const distance = Math.hypot(dx, dy) || 1;
           const reach = 78 + intensity * 18;
           const falloff = Math.max(0, 1 - distance / reach);
-          const wobble = Math.sin(lizardState.time * 0.18 + index * 1.24) * intensity * 0.8;
-          const drift = intensity * falloff * (5.2 + (index % 2) * 1.4);
-          const offsetX = (dx / distance) * drift + wobble;
-          const offsetY =
-            (dy / distance) * drift * 0.72 +
-            Math.cos(lizardState.time * 0.14 + index) * intensity * falloff * 0.9;
-          const rotate =
-            ((dx * 0.08 + dy * 0.03) / Math.max(10, distance)) * intensity * 18;
-          const opacity = Math.max(0.4, 1 - falloff * intensity * 0.12);
-          const blur = Math.max(0, falloff * intensity * 0.12);
-          char.style.setProperty("--fracture-x", `${offsetX.toFixed(2)}px`);
-          char.style.setProperty("--fracture-y", `${offsetY.toFixed(2)}px`);
-          char.style.setProperty("--fracture-rotate", `${rotate.toFixed(2)}deg`);
-          char.style.setProperty("--fracture-opacity", opacity.toFixed(2));
-          char.style.setProperty("--fracture-blur", `${blur.toFixed(2)}px`);
+          const signal = clampValue(intensity * falloff * 0.42, 0, 1);
+          setNodeTextValue(node, resolveSignalScrambleChar(
+            node.dataset.char || "",
+            index,
+            signal,
+            lizardState.time * 16,
+            Math.round(distance * 0.12),
+          ));
+          setNodeStyleValue(node, "--fracture-x", "0px");
+          setNodeStyleValue(node, "--fracture-y", "0px");
+          setNodeStyleValue(node, "--fracture-rotate", "0deg");
+          setNodeStyleValue(node, "--fracture-opacity", `${(1 - signal * 0.08).toFixed(2)}`);
+          setNodeStyleValue(node, "--fracture-blur", "0px");
         });
       }
 
-      function getLizardImpactPoint(node, rect, padding = 10, best = null) {
-        if (!node) return best;
-
+      function getLizardImpactPoint(rect, padding = 10) {
         const expandedLeft = rect.left - padding;
         const expandedRight = rect.right + padding;
         const expandedTop = rect.top - padding;
         const expandedBottom = rect.bottom + padding;
-        const dx =
-          node.x < expandedLeft
-            ? expandedLeft - node.x
-            : node.x > expandedRight
-              ? node.x - expandedRight
-              : 0;
-        const dy =
-          node.y < expandedTop
-            ? expandedTop - node.y
-            : node.y > expandedBottom
-              ? node.y - expandedBottom
-              : 0;
-        const distance = Math.hypot(dx, dy);
-        let nextBest = best;
+        let best = null;
 
-        if (!nextBest || distance < nextBest.distance) {
-          nextBest = { distance, x: node.x, y: node.y };
+        for (let index = 0; index < lizardState.nodes.length; index += 1) {
+          const node = lizardState.nodes[index];
+          const dx =
+            node.x < expandedLeft
+              ? expandedLeft - node.x
+              : node.x > expandedRight
+                ? node.x - expandedRight
+                : 0;
+          const dy =
+            node.y < expandedTop
+              ? expandedTop - node.y
+              : node.y > expandedBottom
+                ? node.y - expandedBottom
+                : 0;
+          const distance = Math.hypot(dx, dy);
+
+          if (!best || distance < best.distance) {
+            best = { distance, x: node.x, y: node.y };
+          }
         }
 
-        if (!node.children?.length) return nextBest;
-
-        for (let index = 0; index < node.children.length; index += 1) {
-          nextBest = getLizardImpactPoint(node.children[index], rect, padding, nextBest);
-        }
-
-        return nextBest;
+        return best;
       }
 
       function updateLizardTextFracture() {
+        if (!state.lizardSignalEffectEnabled) {
+          restoreNavEffectText();
+          return;
+        }
+
         navButtons.forEach((button) => {
           const fracture = navFractureState.get(button) || {
             intensity: 0,
             impactX: 0,
             impactY: 0,
+            active: false,
           };
+
           if (!lizardState.renderVisible || !lizardState.critter) {
+            if (fracture.intensity < 0.04 && !fracture.active) {
+              return;
+            }
             fracture.intensity += (0 - fracture.intensity) * 0.24;
+            if (fracture.intensity < 0.04) {
+              fracture.intensity = 0;
+              if (fracture.active) {
+                setButtonFracture(button, 0, fracture.impactX, fracture.impactY);
+                fracture.active = false;
+              }
+              navFractureState.set(button, fracture);
+              return;
+            }
             setButtonFracture(button, fracture.intensity, fracture.impactX, fracture.impactY);
+            fracture.active = true;
             navFractureState.set(button, fracture);
             return;
           }
 
-          const rect = button.getBoundingClientRect();
-          const impact = getLizardImpactPoint(lizardState.critter, rect, 8);
+          const metrics = getButtonFractureMetrics(button);
+          const impact = getLizardImpactPoint(metrics.rect, 8);
           const targetIntensity = impact
             ? Math.max(0, Math.min(4.6, (84 - impact.distance) / 18))
             : 0;
@@ -2051,33 +2754,39 @@
             fracture.impactY += (impact.y - fracture.impactY) * 0.34;
           }
 
-          setButtonFracture(button, fracture.intensity, fracture.impactX, fracture.impactY);
+          if (fracture.intensity < 0.04) {
+            fracture.intensity = 0;
+            if (fracture.active) {
+              setButtonFracture(button, 0, fracture.impactX, fracture.impactY);
+              fracture.active = false;
+            }
+            navFractureState.set(button, fracture);
+            return;
+          }
+
+          setButtonFracture(button, fracture.intensity, fracture.impactX, fracture.impactY, metrics);
+          fracture.active = true;
           navFractureState.set(button, fracture);
         });
       }
 
-      function measureLizardBounds(node, bounds = null) {
-        const nextBounds = bounds || {
+      function measureLizardBounds() {
+        const bounds = {
           minX: Number.POSITIVE_INFINITY,
           maxX: Number.NEGATIVE_INFINITY,
           minY: Number.POSITIVE_INFINITY,
           maxY: Number.NEGATIVE_INFINITY,
         };
 
-        if (!node) return nextBounds;
-
-        nextBounds.minX = Math.min(nextBounds.minX, node.x);
-        nextBounds.maxX = Math.max(nextBounds.maxX, node.x);
-        nextBounds.minY = Math.min(nextBounds.minY, node.y);
-        nextBounds.maxY = Math.max(nextBounds.maxY, node.y);
-
-        if (!node.children?.length) return nextBounds;
-
-        for (let index = 0; index < node.children.length; index += 1) {
-          measureLizardBounds(node.children[index], nextBounds);
+        for (let index = 0; index < lizardState.nodes.length; index += 1) {
+          const node = lizardState.nodes[index];
+          bounds.minX = Math.min(bounds.minX, node.x);
+          bounds.maxX = Math.max(bounds.maxX, node.x);
+          bounds.minY = Math.min(bounds.minY, node.y);
+          bounds.maxY = Math.max(bounds.maxY, node.y);
         }
 
-        return nextBounds;
+        return bounds;
       }
 
       class Segment {
@@ -2095,6 +2804,7 @@
           this.absAngle = parent.absAngle + angle;
           this.range = range;
           this.stiffness = stiffness;
+          lizardState.nodes.push(this);
           this.updateRelative(false, true);
         }
 
@@ -2377,13 +3087,44 @@
 
       function initializeLizardCanvas() {
         resizeLizardCanvas();
+        startLizardLoop();
+      }
+
+      function startLizardLoop() {
+        if (lizardState.running) return;
+        lizardState.running = true;
+        lizardState.lastFrameAt = 0;
         lizardState.rafId = window.requestAnimationFrame(runLizardLoop);
       }
 
+      function stopLizardLoop() {
+        if (!lizardState.running) return;
+        window.cancelAnimationFrame(lizardState.rafId);
+        lizardState.rafId = 0;
+        lizardState.lastFrameAt = 0;
+        lizardState.running = false;
+      }
+
+      function shouldKeepLizardLoopRunning() {
+        return !document.hidden;
+      }
+
+      function handleVisibilityChange() {
+        if (document.hidden) {
+          stopLizardLoop();
+          return;
+        }
+
+        if (shouldKeepLizardLoopRunning()) {
+          startLizardLoop();
+        }
+      }
+
       function resizeLizardCanvas() {
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = Math.min(window.devicePixelRatio || 1, lizardState.maxDpr);
         lizardState.width = window.innerWidth;
         lizardState.height = window.innerHeight;
+        lizardState.dpr = dpr;
         homeLizardCanvas.width = Math.round(lizardState.width * dpr);
         homeLizardCanvas.height = Math.round(lizardState.height * dpr);
         homeLizardCanvas.style.width = `${lizardState.width}px`;
@@ -2400,6 +3141,7 @@
           lizardState.legCount,
           lizardState.tailCount,
         );
+        startLizardLoop();
       }
 
       function handleLizardPointerMove(event) {
@@ -2443,7 +3185,19 @@
         }
 
         lizardState.lastFrameAt = timestamp;
-        drawHomeLizard();
+        try {
+          drawHomeLizard();
+        } catch (error) {
+          console.error("Home lizard loop failed:", error);
+          state.lizardSignalEffectEnabled = false;
+          restoreNavEffectText();
+        }
+
+        if (!shouldKeepLizardLoopRunning()) {
+          stopLizardLoop();
+          return;
+        }
+
         lizardState.rafId = window.requestAnimationFrame(runLizardLoop);
       }
 
@@ -2459,11 +3213,20 @@
         lizardState.time += 1;
         let targetX = lizardState.input.mouse.x;
         let targetY = lizardState.input.mouse.y;
+        let exitProgress = 0;
 
         if (lizardState.mode === "entering") {
           targetX = lizardState.anchor.x;
           targetY = lizardState.anchor.y;
-        } else if (lizardState.mode === "exiting" || lizardState.mode === "parked") {
+        } else if (lizardState.mode === "exiting") {
+          exitProgress = lizardState.exitStartedAt
+            ? Math.min(1, (performance.now() - lizardState.exitStartedAt) / lizardState.exitTravelMs)
+            : 1;
+          const eased = 1 - (1 - exitProgress) ** 3;
+          const arcLift = Math.sin(eased * Math.PI) * Math.max(20, lizardState.height * 0.02);
+          targetX = lerpValue(lizardState.exitOrigin.x, lizardState.parked.x, eased);
+          targetY = lerpValue(lizardState.exitOrigin.y, lizardState.parked.y, eased) - arcLift;
+        } else if (lizardState.mode === "parked") {
           targetX = lizardState.parked.x;
           targetY = lizardState.parked.y;
         }
@@ -2477,6 +3240,8 @@
         if (lizardState.mode === "entering") {
           lizardState.critter.follow(targetX, targetY);
           lizardState.critter.follow(targetX, targetY);
+        } else if (lizardState.mode === "exiting" && exitProgress > 0.58) {
+          lizardState.critter.follow(targetX, targetY);
         }
         homeLizardContext.restore();
 
@@ -2484,15 +3249,19 @@
           lizardState.critter.x - targetX,
           lizardState.critter.y - targetY,
         );
-        const bounds = measureLizardBounds(lizardState.critter);
+        const bounds = measureLizardBounds();
 
         if (lizardState.mode === "entering" && distanceToGoal < 24) {
           lizardState.mode = "active";
         }
 
-        if (lizardState.mode === "exiting" && bounds.maxY < -28) {
+        if (
+          lizardState.mode === "exiting" &&
+          (bounds.maxY < -28 || (exitProgress >= 1 && distanceToGoal < 18))
+        ) {
           lizardState.mode = "parked";
           lizardState.renderVisible = false;
+          lizardState.exitStartedAt = 0;
           homeLizardStage.classList.remove("is-visible");
         }
 
@@ -2521,6 +3290,7 @@
         );
 
         lizardState.segmentCount = 0;
+        lizardState.nodes = [critter];
 
         let spinal = critter;
         for (let index = 0; index < 6; index += 1) {
@@ -2638,8 +3408,14 @@
 
         if (!frame) {
           state.projectNodes.forEach((node) => node.setAttribute("data-contrast", "dark"));
+          state.projectContrastSampleAt = 0;
           return;
         }
+
+        if (state.activeSection !== "projects") return;
+
+        const now = performance.now();
+        if (now - state.projectContrastSampleAt < state.projectContrastInterval) return;
 
         state.projectNodes.forEach((node) => {
           const brightness = sampleBrightnessBehindElement(node, frame);
@@ -2647,6 +3423,7 @@
           const nextContrast = getStableContrastMode(brightness, currentContrast);
           node.setAttribute("data-contrast", nextContrast);
         });
+        state.projectContrastSampleAt = now;
       }
 
       function sampleBrightnessBehindElement(element, frame) {
@@ -2725,6 +3502,7 @@
           const button = document.createElement("button");
           button.type = "button";
           button.className = "projects-node";
+          button.dataset.ringIndex = String(entry.ringIndex);
           if (entry.homepage) {
             button.setAttribute("data-has-homepage", "true");
             button.title = entry.homepage;
@@ -2735,18 +3513,14 @@
           button.innerHTML = `
             <span class="projects-node-title">${entry.title}</span>
           `;
-          button.addEventListener("click", () => {
+          button.addEventListener("pointerdown", (event) => {
+            state.pendingProjectRingIndex = entry.ringIndex;
+            state.pendingProjectPointerId = event.pointerId;
+          });
+          button.addEventListener("click", (event) => {
             if (state.activeSection !== "projects") return;
-            if (state.didDialDrag) return;
-            if (entry.homepage) {
-              openProjectHomepage(entry.homepage);
-              return;
-            }
-            if (entry.sticker) {
-              showSticker(entry.sticker, entry.title);
-              return;
-            }
-            snapDialToRingIndex(entry.ringIndex);
+            if (event.detail !== 0) return;
+            activateProjectEntry(entry);
           });
           projectsDial.append(button);
           return button;
@@ -2761,15 +3535,21 @@
         projectsDial.addEventListener("wheel", handleDialWheel, { passive: false });
         projectsDial.addEventListener("keydown", handleDialKeydown);
 
+        updateProjectDialLayout();
         updateProjectDial(true);
       }
 
       function handleDialPointerDown(event) {
         if (state.activeSection !== "projects") return;
 
-        state.projectOrbitIntroStartAt = 0;
-        state.projectOrbitIntroFromRotation = state.dialRotation;
-        state.projectOrbitIntroToRotation = state.dialRotation;
+        const projectButton = event.target.closest(".projects-node");
+        state.pendingProjectRingIndex = projectButton
+          ? Number.parseInt(projectButton.dataset.ringIndex || "-1", 10)
+          : -1;
+        state.pendingProjectPointerId = event.pointerId ?? null;
+        markProjectDialInteraction();
+        cancelProjectDialTween();
+        state.projectIdleRotationVelocity = 0;
         projectsOrbit.classList.remove("is-auto-rotating");
         state.isDialDragging = true;
         state.didDialDrag = false;
@@ -2802,13 +3582,26 @@
         const rotationDelta =
           ((projectedDelta / Math.max(geometry.radius, 1)) * 180 * 1.35) / Math.PI;
 
+        markProjectDialInteraction();
         state.dialRotation += rotationDelta;
         state.didDialDrag = state.dragDistance > 6;
+        if (state.didDialDrag) {
+          state.pendingProjectRingIndex = -1;
+          state.pendingProjectPointerId = null;
+        }
         updateProjectDial();
       }
 
       function handleDialPointerUp(event) {
         if (!state.isDialDragging) return;
+
+        const shouldActivatePendingProject =
+          !state.didDialDrag &&
+          state.pendingProjectRingIndex >= 0 &&
+          (state.pendingProjectPointerId == null || state.pendingProjectPointerId === event?.pointerId);
+        const pendingEntry = shouldActivatePendingProject
+          ? PROJECT_RING[state.pendingProjectRingIndex] || null
+          : null;
 
         state.isDialDragging = false;
         projectsOrbit.classList.remove("is-dragging");
@@ -2816,7 +3609,16 @@
           projectsDial.releasePointerCapture(event.pointerId);
         }
 
-        snapDialToNearestProject();
+        markProjectDialInteraction();
+        state.pendingProjectRingIndex = -1;
+        state.pendingProjectPointerId = null;
+
+        if (pendingEntry) {
+          activateProjectEntry(pendingEntry);
+        } else {
+          snapDialToNearestProject();
+        }
+
         window.setTimeout(() => {
           state.didDialDrag = false;
         }, 0);
@@ -2826,9 +3628,9 @@
         if (state.activeSection !== "projects") return;
 
         event.preventDefault();
-        state.projectOrbitIntroStartAt = 0;
-        state.projectOrbitIntroFromRotation = state.dialRotation;
-        state.projectOrbitIntroToRotation = state.dialRotation;
+        markProjectDialInteraction();
+        cancelProjectDialTween();
+        state.projectIdleRotationVelocity = 0;
         projectsOrbit.classList.remove("is-auto-rotating");
         beginWheelScrolling();
         const modeScale =
@@ -2851,6 +3653,7 @@
         }
 
         event.preventDefault();
+        markProjectDialInteraction();
         const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
         snapDialToRingIndex(modulo(state.activeRingIndex + direction, PROJECT_RING.length));
       }
@@ -2858,12 +3661,12 @@
       function updateProjectDial(instant = false) {
         if (!state.projectNodes.length) return;
 
-        const rect = projectsDial.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
+        const layout = state.projectDialLayout || updateProjectDialLayout();
+        if (!layout) return;
 
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const radius = Math.min(rect.width, rect.height) * (window.innerWidth > 900 ? 0.42 : 0.35);
+        const centerX = layout.width / 2;
+        const centerY = layout.height / 2;
+        const radius = layout.radius;
         const angleStep = 360 / PROJECT_RING.length;
         const focusAngle = 180;
         let closestRingIndex = state.activeRingIndex;
@@ -2873,10 +3676,10 @@
           const angle = normalizeAngle(state.dialRotation + angleStep * index);
           const radians = (angle * Math.PI) / 180;
           const frontness = (Math.cos(((angle - focusAngle) * Math.PI) / 180) + 1) / 2;
-          const x = centerX + radius * Math.cos(radians);
-          const y = centerY + radius * Math.sin(radians);
-          const scale = 0.7 + frontness * 0.48;
-          const opacity = 0.14 + frontness * 0.82;
+          const x = snapProjectDialValue(centerX + radius * Math.cos(radians), 0.25);
+          const y = snapProjectDialValue(centerY + radius * Math.sin(radians), 0.25);
+          const scale = snapProjectDialValue(0.7 + frontness * 0.48, 0.005);
+          const opacity = snapProjectDialValue(0.14 + frontness * 0.82, 0.01);
           const distance = angularDistance(angle, focusAngle);
 
           if (distance < closestDistance) {
@@ -2889,7 +3692,7 @@
           node.style.opacity = String(opacity);
           node.style.visibility = "visible";
           node.style.pointerEvents = "auto";
-          node.style.transform = `translate(-100%, -50%) scale(${scale.toFixed(3)})`;
+          node.style.transform = `translate3d(-100%, -50%, 0) scale(${scale.toFixed(2)})`;
           node.style.zIndex = String(Math.round(frontness * 100));
           node.classList.toggle("is-active", index === closestRingIndex);
 
@@ -2903,10 +3706,16 @@
         state.projectNodes.forEach((node, index) => {
           node.classList.toggle("is-active", index === closestRingIndex);
         });
+        if (instant) {
+          state.projectContrastSampleAt = 0;
+        }
         updateProjectNodeContrast(state.lastFrame);
       }
 
       function runProjectOrbitLoop(timestamp) {
+        const dt = state.projectOrbitLastAt
+          ? Math.min(0.05, (timestamp - state.projectOrbitLastAt) / 1000)
+          : 0.016;
         state.projectOrbitLastAt = timestamp;
 
         const canAnimateIntro =
@@ -2920,10 +3729,10 @@
             state.projectOrbitIntroStartAt = timestamp;
           }
 
-          const introDuration = 880;
+          const introDuration = state.projectOrbitTweenDuration || 760;
           const elapsed = timestamp - state.projectOrbitIntroStartAt;
           const progress = Math.max(0, Math.min(1, elapsed / introDuration));
-          const eased = 1 - (1 - progress) ** 3;
+          const eased = 1 - (1 - progress) ** 4;
           state.dialRotation =
             state.projectOrbitIntroFromRotation +
             (state.projectOrbitIntroToRotation - state.projectOrbitIntroFromRotation) * eased;
@@ -2931,16 +3740,71 @@
           updateProjectDial();
 
           if (progress >= 1) {
-            state.projectOrbitIntroStartAt = 0;
-            state.projectOrbitIntroFromRotation = state.dialRotation;
-            state.projectOrbitIntroToRotation = state.dialRotation;
+            cancelProjectDialTween();
+            projectsOrbit.classList.remove("is-auto-rotating");
+          }
+        } else if (canAnimateIntro) {
+          const idleFor = timestamp - state.lastProjectDialInteractionAt;
+          const idleStartDelay = 1320;
+          const idleRampDuration = 1800;
+          const rawRamp = clampValue((idleFor - idleStartDelay) / idleRampDuration, 0, 1);
+          const ramp = rawRamp * rawRamp * (3 - 2 * rawRamp);
+          state.projectIdleRotationPhase += dt;
+          const pulse =
+            0.9 +
+            0.1 * Math.sin(state.projectIdleRotationPhase * 0.85) +
+            0.04 * Math.sin(state.projectIdleRotationPhase * 1.9 + 0.6);
+          const targetVelocity = state.idleProjectRotationSpeed * ramp * pulse;
+          const velocityBlend = Math.min(1, dt * 2.1);
+          state.projectIdleRotationVelocity +=
+            (targetVelocity - state.projectIdleRotationVelocity) * velocityBlend;
+
+          if (Math.abs(state.projectIdleRotationVelocity) > 0.0008) {
+            state.dialRotation += state.projectIdleRotationVelocity * dt;
+            projectsOrbit.classList.add("is-auto-rotating");
+            updateProjectDial();
+          } else {
+            state.projectIdleRotationVelocity = 0;
             projectsOrbit.classList.remove("is-auto-rotating");
           }
         } else {
+          state.projectIdleRotationVelocity = 0;
           projectsOrbit.classList.remove("is-auto-rotating");
         }
 
         state.projectOrbitRafId = window.requestAnimationFrame(runProjectOrbitLoop);
+      }
+
+      function markProjectDialInteraction(at = performance.now()) {
+        state.lastProjectDialInteractionAt = at;
+      }
+
+      function scheduleProjectDialTween(targetRotation, duration = 760) {
+        state.projectOrbitIntroStartAt = 0;
+        state.projectOrbitIntroFromRotation = state.dialRotation;
+        state.projectOrbitIntroToRotation = targetRotation;
+        state.projectOrbitTweenDuration = duration;
+      }
+
+      function cancelProjectDialTween() {
+        state.projectOrbitIntroStartAt = 0;
+        state.projectOrbitIntroFromRotation = state.dialRotation;
+        state.projectOrbitIntroToRotation = state.dialRotation;
+      }
+
+      function activateProjectEntry(entry) {
+        if (!entry || state.activeSection !== "projects") return;
+
+        markProjectDialInteraction();
+        if (entry.homepage) {
+          openProjectHomepage(entry.homepage);
+          return;
+        }
+        if (entry.sticker) {
+          showSticker(entry.sticker, entry.title);
+          return;
+        }
+        snapDialToRingIndex(entry.ringIndex);
       }
 
       function snapDialToNearestProject() {
@@ -2954,7 +3818,8 @@
           180 - angleStep * normalizedRingIndex,
           state.dialRotation,
         );
-        state.dialRotation = targetRotation;
+        scheduleProjectDialTween(targetRotation, 460);
+        state.projectIdleRotationVelocity = 0;
         state.activeRingIndex = normalizedRingIndex;
         state.activeProjectIndex = PROJECT_RING[normalizedRingIndex]?.projectIndex ?? 0;
         updateProjectDial();
@@ -3035,15 +3900,34 @@
       }
 
       function getDialGeometry() {
-        const rect = projectsDial.getBoundingClientRect();
+        const rect = state.projectDialLayout || updateProjectDialLayout();
         if (!rect.width || !rect.height) return null;
 
         return {
           rect,
+          centerX: rect.centerX,
+          centerY: rect.centerY,
+          radius: rect.radius,
+        };
+      }
+
+      function updateProjectDialLayout() {
+        const rect = projectsDial.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+          state.projectDialLayout = null;
+          return null;
+        }
+
+        state.projectDialLayout = {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
           centerX: rect.left + rect.width / 2,
           centerY: rect.top + rect.height / 2,
           radius: Math.min(rect.width, rect.height) * (window.innerWidth > 900 ? 0.42 : 0.35),
         };
+        return state.projectDialLayout;
       }
 
       function normalizeAngle(angle) {
@@ -3066,6 +3950,10 @@
 
       function modulo(value, length) {
         return ((value % length) + length) % length;
+      }
+
+      function snapProjectDialValue(value, step = 1) {
+        return Math.round(value / step) * step;
       }
 
       function createSvgRect(width, height) {

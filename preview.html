@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SVG 직선 편집기</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      color: #111;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    }
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .toolbar-left h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+    .toolbar-left p {
+      margin: 8px 0 0;
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .toolbar-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button {
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #111;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    }
+    button:hover { background: #f7f7f7; }
+    button.active {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    button.primary {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+    button.primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+    }
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: center;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #555;
+    }
+    .editor-wrap {
+      overflow: hidden;
+      padding: 0;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: 72vh;
+      min-height: 500px;
+      background: #fff;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    label.inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+    .hint {
+      color: #777;
+    }
+    @media (max-width: 800px) {
+      .app { padding: 14px; }
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .toolbar-right {
+        width: 100%;
+      }
+      .toolbar-right button {
+        flex: 1 1 calc(50% - 8px);
+      }
+      .toolbar-left h1 { font-size: 24px; }
+      svg { min-height: 420px; height: 68vh; }
+    }
+  </style>
+<script type="text/javascript" nonce="72793ddebce842209788cc0f552" src="//local.adguard.org?ts=1776832099772&amp;type=content-script&amp;dmn=chatgpt.com&amp;url=https%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000009fcc720bbce821d89158a12e%26ts%3D493566%26p%3Dfs%26cid%3D1%26sig%3D9f1db219fd484c38eece1d381222412e021cb9aa215cb4110623b25edf170b1f%26v%3D0&amp;app=com.apple.Safari&amp;css=2&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="72793ddebce842209788cc0f552" src="//local.adguard.org?ts=1776832099772&amp;name=AdGuard%20Extra&amp;type=user-script"></script></head>
+<body>
+  <div class="app">
+    <div class="panel toolbar">
+      <div class="toolbar-left">
+        <h1>SVG 직선 편집기</h1>
+        <p>드래그해서 직선을 그리고, 선택해서 움직이거나 끝점을 조절한 뒤 SVG 파일로 저장하세요.</p>
+      </div>
+      <div class="toolbar-right">
+        <button id="drawBtn" class="active">그리기</button>
+        <button id="selectBtn">선택/수정</button>
+        <button id="undoBtn">마지막 선 지우기</button>
+        <button id="deleteBtn">선택 삭제</button>
+        <button id="clearBtn">전체 비우기</button>
+        <button id="exportBtn" class="primary">SVG 내보내기</button>
+      </div>
+    </div>
+
+    <div class="panel status">
+      <label class="inline"><input type="checkbox" id="snapToggle" checked /> 격자에 맞춰 그리기</label>
+      <div>현재 모드: <span id="modeText">그리기</span></div>
+      <div>선 개수: <span id="lineCount">0</span></div>
+      <div class="hint">선택/수정 모드에서 선 전체 이동과 양 끝점 조절이 가능합니다.</div>
+    </div>
+
+    <div class="panel editor-wrap">
+      <svg id="editor" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" aria-label="직선 편집 캔버스">
+        <defs>
+          <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="1" />
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="1000" height="620" fill="url(#smallGrid)"></rect>
+        <g id="linesLayer"></g>
+        <g id="handlesLayer"></g>
+        <line id="draftLine" x1="0" y1="0" x2="0" y2="0" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 8" visibility="hidden"></line>
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    const width = 1000;
+    const height = 620;
+    const gridSize = 20;
+
+    const svg = document.getElementById('editor');
+    const linesLayer = document.getElementById('linesLayer');
+    const handlesLayer = document.getElementById('handlesLayer');
+    const draftLineEl = document.getElementById('draftLine');
+
+    const drawBtn = document.getElementById('drawBtn');
+    const selectBtn = document.getElementById('selectBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const snapToggle = document.getElementById('snapToggle');
+    const modeText = document.getElementById('modeText');
+    const lineCount = document.getElementById('lineCount');
+
+    let mode = 'draw';
+    let lines = [];
+    let selectedId = null;
+    let draft = null;
+    let dragState = null;
+    let nextId = 1;
+
+    function updateButtons() {
+      drawBtn.classList.toggle('active', mode === 'draw');
+      selectBtn.classList.toggle('active', mode === 'select');
+      modeText.textContent = mode === 'draw' ? '그리기' : '선택/수정';
+    }
+
+    function snapValue(value) {
+      if (!snapToggle.checked) return value;
+      return Math.round(value / gridSize) * gridSize;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function getPoint(event) {
+      const rect = svg.getBoundingClientRect();
+      const scaleX = width / rect.width;
+      const scaleY = height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      return {
+        x: clamp(snapValue(x), 0, width),
+        y: clamp(snapValue(y), 0, height),
+      };
+    }
+
+    function render() {
+      linesLayer.innerHTML = '';
+      handlesLayer.innerHTML = '';
+      lineCount.textContent = String(lines.length);
+
+      lines.forEach((line) => {
+        const isSelected = line.id === selectedId;
+
+        const lineEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        lineEl.setAttribute('x1', line.x1);
+        lineEl.setAttribute('y1', line.y1);
+        lineEl.setAttribute('x2', line.x2);
+        lineEl.setAttribute('y2', line.y2);
+        lineEl.setAttribute('stroke', isSelected ? '#2563eb' : '#111827');
+        lineEl.setAttribute('stroke-width', isSelected ? '4' : '3');
+        lineEl.setAttribute('stroke-linecap', 'round');
+        lineEl.style.cursor = mode === 'select' ? 'move' : 'crosshair';
+
+        lineEl.addEventListener('pointerdown', (event) => {
+          event.stopPropagation();
+          if (mode !== 'select') return;
+          selectedId = line.id;
+          dragState = {
+            type: 'move-line',
+            id: line.id,
+            startPointer: getPoint(event),
+            startLine: { ...line },
+          };
+          render();
+        });
+
+        linesLayer.appendChild(lineEl);
+
+        if (isSelected && mode === 'select') {
+          ['start', 'end'].forEach((handle) => {
+            const cx = handle === 'start' ? line.x1 : line.x2;
+            const cy = handle === 'start' ? line.y1 : line.y2;
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', cx);
+            circle.setAttribute('cy', cy);
+            circle.setAttribute('r', '8');
+            circle.setAttribute('fill', '#fff');
+            circle.setAttribute('stroke', '#2563eb');
+            circle.setAttribute('stroke-width', '3');
+            circle.style.cursor = 'grab';
+
+            circle.addEventListener('pointerdown', (event) => {
+              event.stopPropagation();
+              dragState = {
+                type: 'move-handle',
+                id: line.id,
+                handle,
+              };
+            });
+
+            handlesLayer.appendChild(circle);
+          });
+        }
+      });
+    }
+
+    function setDraftVisibility(show) {
+      draftLineEl.setAttribute('visibility', show ? 'visible' : 'hidden');
+    }
+
+    function updateDraftLine() {
+      if (!draft) {
+        setDraftVisibility(false);
+        return;
+      }
+      draftLineEl.setAttribute('x1', draft.x1);
+      draftLineEl.setAttribute('y1', draft.y1);
+      draftLineEl.setAttribute('x2', draft.x2);
+      draftLineEl.setAttribute('y2', draft.y2);
+      setDraftVisibility(true);
+    }
+
+    function finishInteraction() {
+      if (draft) {
+        const isTiny = Math.abs(draft.x2 - draft.x1) < 2 && Math.abs(draft.y2 - draft.y1) < 2;
+        if (!isTiny) {
+          const newLine = { id: nextId++, ...draft };
+          lines.push(newLine);
+          selectedId = newLine.id;
+        }
+        draft = null;
+        updateDraftLine();
+        render();
+      }
+
+      if (dragState) {
+        dragState = null;
+      }
+    }
+
+    svg.addEventListener('pointerdown', (event) => {
+      const point = getPoint(event);
+
+      if (mode === 'draw') {
+        selectedId = null;
+        draft = { x1: point.x, y1: point.y, x2: point.x, y2: point.y };
+        updateDraftLine();
+        render();
+        return;
+      }
+
+      if (mode === 'select') {
+        selectedId = null;
+        render();
+      }
+    });
+
+    svg.addEventListener('pointermove', (event) => {
+      const point = getPoint(event);
+
+      if (draft) {
+        draft.x2 = point.x;
+        draft.y2 = point.y;
+        updateDraftLine();
+        return;
+      }
+
+      if (!dragState) return;
+
+      if (dragState.type === 'move-line') {
+        const dx = point.x - dragState.startPointer.x;
+        const dy = point.y - dragState.startPointer.y;
+
+        lines = lines.map((line) => {
+          if (line.id !== dragState.id) return line;
+          return {
+            ...line,
+            x1: clamp(snapValue(dragState.startLine.x1 + dx), 0, width),
+            y1: clamp(snapValue(dragState.startLine.y1 + dy), 0, height),
+            x2: clamp(snapValue(dragState.startLine.x2 + dx), 0, width),
+            y2: clamp(snapValue(dragState.startLine.y2 + dy), 0, height),
+          };
+        });
+
+        render();
+        return;
+      }
+
+      if (dragState.type === 'move-handle') {
+        lines = lines.map((line) => {
+          if (line.id !== dragState.id) return line;
+          if (dragState.handle === 'start') {
+            return { ...line, x1: point.x, y1: point.y };
+          }
+          return { ...line, x2: point.x, y2: point.y };
+        });
+
+        render();
+      }
+    });
+
+    svg.addEventListener('pointerup', finishInteraction);
+    svg.addEventListener('pointerleave', finishInteraction);
+    svg.addEventListener('pointercancel', finishInteraction);
+
+    drawBtn.addEventListener('click', () => {
+      mode = 'draw';
+      updateButtons();
+      render();
+    });
+
+    selectBtn.addEventListener('click', () => {
+      mode = 'select';
+      updateButtons();
+      render();
+    });
+
+    undoBtn.addEventListener('click', () => {
+      if (!lines.length) return;
+      const removed = lines.pop();
+      if (selectedId === removed.id) selectedId = null;
+      render();
+    });
+
+    deleteBtn.addEventListener('click', () => {
+      if (selectedId == null) return;
+      lines = lines.filter((line) => line.id !== selectedId);
+      selectedId = null;
+      render();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      lines = [];
+      selectedId = null;
+      draft = null;
+      dragState = null;
+      updateDraftLine();
+      render();
+    });
+
+    exportBtn.addEventListener('click', () => {
+      const content = lines
+        .map((line) => `<line x1="${line.x1}" y1="${line.y1}" x2="${line.x2}" y2="${line.y2}" stroke="black" stroke-width="2" stroke-linecap="round" />`)
+        .join('\n  ');
+
+      const markup = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n  <rect width="100%" height="100%" fill="white" />${content ? `\n  ${content}\n` : '\n'}</svg>`;
+
+      const blob = new Blob([markup], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'lines.svg';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    updateButtons();
+    render();
+  </script>
+</body>
+</html>
