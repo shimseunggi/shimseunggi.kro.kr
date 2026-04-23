@@ -288,7 +288,7 @@
         right: 0;
         bottom: 0;
         z-index: 2;
-        height: 290px;
+        height: 350px;
         opacity: 0;
         pointer-events: none;
         transform: translate3d(-120px, 0, 0);
@@ -299,6 +299,7 @@
 
       .contact-dino-stage.is-visible {
         opacity: 1;
+        pointer-events: auto;
         transform: translate3d(0, 0, 0);
       }
 
@@ -307,7 +308,7 @@
         width: 100vw;
         height: 100%;
         border: 0;
-        pointer-events: none;
+        touch-action: manipulation;
       }
 
       .contact-panel.is-visible {
@@ -387,6 +388,88 @@
           scale(var(--contact-blast-scale, 1));
         opacity: var(--contact-blast-opacity, 1);
         filter: blur(var(--contact-blast-blur, 0px));
+      }
+
+      .help-text {
+        position: fixed;
+        bottom: 24px;
+        left: 48px;
+        color: rgba(17, 17, 17, 0.4);
+        font-size: 0.9rem;
+        font-weight: 500;
+        z-index: 10;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      .help-text.is-visible {
+        opacity: 1;
+      }
+
+      .contact-runner-scoreboard {
+        display: grid;
+        justify-items: end;
+        width: max-content;
+        max-width: 100%;
+        margin-top: 6px;
+        margin-left: auto;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+      }
+
+      .contact-runner-scoreboard.is-visible {
+        opacity: 1;
+      }
+
+      .contact-runner-score-canvas {
+        display: block;
+        width: 154px;
+        height: 16px;
+      }
+
+      .contact-runner-overlay {
+        position: fixed;
+        left: 50%;
+        bottom: 118px;
+        z-index: 10;
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-50%);
+        transition: opacity 180ms ease;
+      }
+
+      .contact-runner-overlay.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .contact-runner-gameover-canvas {
+        display: block;
+        width: 191px;
+        height: 11px;
+      }
+
+      .contact-runner-restart {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .contact-runner-restart:focus-visible {
+        outline: 2px solid rgba(17, 17, 17, 0.28);
+        outline-offset: 6px;
+      }
+
+      .contact-runner-restart-canvas {
+        display: block;
+        width: 36px;
+        height: 32px;
       }
 
       .projects-orbit:not(.is-visible) .projects-node,
@@ -676,7 +759,7 @@
         }
 
         .contact-dino-stage {
-          height: 240px;
+          height: 280px;
         }
 
         .contact-dino-canvas {
@@ -718,7 +801,7 @@
         }
 
         .contact-dino-stage {
-          height: 170px;
+          height: 220px;
         }
 
         .contact-panel.is-visible {
@@ -752,6 +835,32 @@
 
         .contact-line {
           font-size: 1rem;
+        }
+
+        .help-text {
+          left: 14px;
+          bottom: 14px;
+          font-size: 0.75rem;
+        }
+
+        .contact-runner-score-canvas {
+          width: 132px;
+          height: 14px;
+        }
+
+        .contact-runner-overlay {
+          bottom: 90px;
+          gap: 10px;
+        }
+
+        .contact-runner-gameover-canvas {
+          width: 168px;
+          height: 10px;
+        }
+
+        .contact-runner-restart-canvas {
+          width: 32px;
+          height: 28px;
         }
 
         .contact-dino-canvas {
@@ -789,12 +898,22 @@
       <button class="nav-button" data-section="contact" type="button">Contact</button>
     </nav>
     <section class="about-panel" id="about-panel" aria-hidden="true"></section>
+    <div class="help-text" id="help-text"></div>
+    <div class="contact-runner-overlay" id="contact-runner-overlay" aria-hidden="true">
+      <canvas class="contact-runner-gameover-canvas" id="contact-runner-gameover-canvas"></canvas>
+      <button class="contact-runner-restart" id="contact-runner-restart" type="button" aria-label="Restart game">
+        <canvas class="contact-runner-restart-canvas" id="contact-runner-restart-canvas"></canvas>
+      </button>
+    </div>
     <section class="contact-panel" id="contact-panel" aria-hidden="true">
       <div class="contact-kicker">Contact</div>
       <a class="contact-line is-link" href="mailto:shimseunggi@naver.com">shimseunggi@naver.com</a>
       <a class="contact-line is-link" href="https://github.com/shimseunggi" target="_blank" rel="noreferrer">github.com/shimseunggi</a>
       <div class="contact-kicker">Location</div>
       <div class="contact-line">Based in Gwangyang, Korea</div>
+      <div class="contact-runner-scoreboard" id="contact-runner-scoreboard" aria-hidden="true">
+        <canvas class="contact-runner-score-canvas" id="contact-runner-score-canvas"></canvas>
+      </div>
     </section>
     <section class="contact-dino-stage" id="contact-dino-stage" aria-hidden="true">
       <canvas class="contact-dino-canvas" id="contact-dino-canvas" aria-hidden="true"></canvas>
@@ -838,6 +957,16 @@
       const contactDinoStage = document.querySelector("#contact-dino-stage");
       const contactDinoCanvas = document.querySelector("#contact-dino-canvas");
       const contactDinoContext = contactDinoCanvas.getContext("2d");
+      const helpText = document.querySelector("#help-text");
+      const contactRunnerScoreboard = document.querySelector("#contact-runner-scoreboard");
+      const contactRunnerScoreCanvas = document.querySelector("#contact-runner-score-canvas");
+      const contactRunnerScoreContext = contactRunnerScoreCanvas.getContext("2d");
+      const contactRunnerOverlay = document.querySelector("#contact-runner-overlay");
+      const contactRunnerGameOverCanvas = document.querySelector("#contact-runner-gameover-canvas");
+      const contactRunnerGameOverContext = contactRunnerGameOverCanvas.getContext("2d");
+      const contactRunnerRestart = document.querySelector("#contact-runner-restart");
+      const contactRunnerRestartCanvas = document.querySelector("#contact-runner-restart-canvas");
+      const contactRunnerRestartContext = contactRunnerRestartCanvas.getContext("2d");
       const stickerStage = document.querySelector("#sticker-stage");
       const stickerCard = document.querySelector("#sticker-card");
       const stickerImage = document.querySelector("#sticker-image");
@@ -846,6 +975,157 @@
 
       const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
       const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".m4v", ".ogv"];
+      const CONTACT_RUNNER_SPRITE_URL = "./200-offline-sprite.png";
+      const CONTACT_RUNNER_BEST_SCORE_KEY = "contact-runner-best-score";
+      const CONTACT_RUNNER_SPRITES = {
+        restart: { x: 2, y: 2, width: 72, height: 64, drawWidth: 36, drawHeight: 32 },
+        cloud: { x: 166, y: 2, width: 92, height: 28, drawWidth: 46, drawHeight: 14 },
+        bird: { x: 260, y: 2, width: 92, height: 80, drawWidth: 46, drawHeight: 40, frameOffset: 92 },
+        cactusSmall: { x: 446, y: 2, width: 34, height: 70, drawWidth: 17, drawHeight: 35 },
+        cactusLarge: { x: 652, y: 2, width: 50, height: 100, drawWidth: 25, drawHeight: 50 },
+        horizon: { x: 2, y: 104, width: 1200, height: 24, drawWidth: 600, drawHeight: 12 },
+        scoreText: { x: 1294, y: 2, glyphWidth: 20, glyphHeight: 24, drawWidth: 10, drawHeight: 12 },
+        gameOver: { x: 1294, y: 28, width: 382, height: 22, drawWidth: 191, drawHeight: 11 },
+        moonPhases: [
+          { x: 954, y: 2, width: 40, height: 80, drawWidth: 20, drawHeight: 40 },
+          { x: 994, y: 2, width: 40, height: 80, drawWidth: 20, drawHeight: 40 },
+          { x: 1034, y: 2, width: 40, height: 80, drawWidth: 20, drawHeight: 40 },
+          { x: 1074, y: 2, width: 80, height: 80, drawWidth: 40, drawHeight: 40 },
+          { x: 1154, y: 2, width: 40, height: 80, drawWidth: 20, drawHeight: 40 },
+          { x: 1194, y: 2, width: 40, height: 80, drawWidth: 20, drawHeight: 40 },
+          { x: 1234, y: 2, width: 58, height: 80, drawWidth: 29, drawHeight: 40 },
+        ],
+        trexStand: { x: 1678, y: 2, width: 88, height: 94, drawWidth: 44, drawHeight: 47 },
+        trexRun1: { x: 1766, y: 2, width: 88, height: 94, drawWidth: 44, drawHeight: 47 },
+        trexRun2: { x: 1854, y: 2, width: 88, height: 94, drawWidth: 44, drawHeight: 47 },
+        trexCrash: { x: 1942, y: 2, width: 88, height: 94, drawWidth: 44, drawHeight: 47 },
+        trexDuck1: { x: 2030, y: 2, width: 118, height: 60, drawWidth: 59, drawHeight: 30 },
+        trexDuck2: { x: 2148, y: 2, width: 118, height: 60, drawWidth: 59, drawHeight: 30 },
+      };
+      const PIXEL_SPRITES = {
+        birdUp: [
+          "                       ",
+          "                       ",
+          "                       ",
+          "                       ",
+          "                #      ",
+          "              ###      ",
+          "             ####      ",
+          "            #####      ",
+          "           ######      ",
+          "          #######      ",
+          "          #######      ",
+          "        #########      ",
+          "      ###########     #",
+          "    #############   ###",
+          "   ####################",
+          "    ###################",
+          "     ################# ",
+          "      ################ ",
+          "        ############   ",
+          "          ########     ",
+          "           ######      ",
+          "                       ",
+          "                       "
+        ],
+        birdDown: [
+          "                       ",
+          "                       ",
+          "                       ",
+          "                       ",
+          "                       ",
+          "               #       ",
+          "             ###       ",
+          "            ####       ",
+          "           #####       ",
+          "          ######       ",
+          "          ######       ",
+          "    #     ######       ",
+          "   ###    ######       ",
+          "  ####   #######       ",
+          "  ##### #########      ",
+          "   ##############      ",
+          "    #############      ",
+          "     ############      ",
+          "      ##########       ",
+          "        ########       ",
+          "          ####         ",
+          "           ###         ",
+          "           ##          "
+        ],
+        cactus1: [
+          "     ####     ",
+          "     ####     ",
+          "     ####     ",
+          "     ####     ",
+          "     ####     ",
+          "  ## ####     ",
+          "  ## ####     ",
+          "  ## #### ##  ",
+          "  ## #### ##  ",
+          "  ## #### ##  ",
+          "  ####### ##  ",
+          "   ###### ##  ",
+          "     #######  ",
+          "     ######   ",
+          "     ####     ",
+          "     ####     ",
+          "     ####     ",
+          "     ####     ",
+          "     ####     ",
+          "     ####     "
+        ],
+        cactus2: [
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "  ## ####       ## ####   ",
+          "  ## ####       ## ####   ",
+          "  ## #### ##    ## #### ##",
+          "  ## #### ##    ## #### ##",
+          "  ## #### ##    ## #### ##",
+          "  ####### ##    ####### ##",
+          "   ###### ##     ###### ##",
+          "     #######       #######",
+          "     ######        ###### ",
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "     ####          ####   ",
+          "     ####          ####   "
+        ],
+        cactus3: [
+          "   ##       ##       ##   ",
+          "   ##       ##       ##   ",
+          "   ##       ##       ##   ",
+          " # ##     # ##     # ##   ",
+          " # ## #   # ## #   # ## # ",
+          " # ## #   # ## #   # ## # ",
+          " #### #   #### #   #### # ",
+          "  #####    #####    ##### ",
+          "   ####     ####     #### ",
+          "   ##       ##       ##   ",
+          "   ##       ##       ##   ",
+          "   ##       ##       ##   "
+        ],
+        cloud: [
+          "                         ",
+          "                         ",
+          "        ######           ",
+          "     ###########         ",
+          "   ###############       ",
+          "  ##################     ",
+          " #####################   ",
+          " ######################  ",
+          "  ####################   ",
+          "    ################     ",
+          "      ###########        ",
+          "                         "
+        ]
+      };
       const NAV_SCRAMBLE_GLYPHS = "₩0123456789-=abcdefghijklmnopqrstuvwxyz";
       const CONVENTIONAL_MEDIA = [
         "background/background.mp4",
@@ -922,7 +1202,6 @@
         navIntroScrambleTimerId: 0,
         contactIntroScrambleRafId: 0,
         contactIntroScrambleTimerId: 0,
-        contactSignalEffectEnabled: true,
         lizardSignalEffectEnabled: true,
       };
 
@@ -958,6 +1237,7 @@
         points: [],
         renderPoints: [],
         legs: [],
+        followTarget: { x: 0, y: 0 },
         anchor: { x: 0, y: 0 },
         parked: { x: 0, y: 0 },
         exitOrigin: { x: 0, y: 0 },
@@ -981,6 +1261,40 @@
         minDot: 0.85,
         videoFps: 14,
       };
+      const contactRunnerState = {
+        status: "inactive",
+        speed: 0,
+        startSpeed: 0,
+        targetX: 0,
+        transitionOriginX: 0,
+        transitionProgress: 0,
+        distance: 0,
+        score: 0,
+        bestScore: 0,
+        milestoneFlashTimer: 0,
+        milestoneFlashDuration: 0.72,
+        milestoneFlashStep: 0.12,
+        milestoneFlashValue: 0,
+        lastMilestoneScore: 0,
+        moonPhaseIndex: 0,
+        moon: null,
+        dinoY: 0,
+        dinoVy: 0,
+        groundY: 0,
+        isDucking: false,
+        obstacles: [],
+        clouds: [],
+        spawnTimer: 0,
+        cloudSpawnTimer: 0,
+        floorOffset: 0,
+      };
+      const contactRunnerAssets = {
+        image: null,
+        loaded: false,
+      };
+      const contactRunnerAudio = {
+        context: null,
+      };
 
       const contactDinoState = {
         width: 0,
@@ -997,7 +1311,10 @@
         waveRadius: 0,
         rafId: 0,
         lastAt: 0,
+        signalEffectEnabled: true,
       };
+      let lastDinoTapTime = 0;
+      initializeContactRunnerAssets();
 
       prepareNavButtonLetters();
       prepareContactTextLetters();
@@ -1010,6 +1327,7 @@
         resizeLizardCanvas();
         positionContactPanel();
         resizeContactDinoCanvas();
+        updateContactRunnerHud();
         updateProjectDialLayout();
         updateNavButtonContrast(state.lastFrame);
         updateProjectDial(true);
@@ -1057,8 +1375,45 @@
           hideSticker();
         }
       });
+      window.addEventListener("keydown", (event) => {
+        if (state.activeSection !== "contact") return;
+
+        if (event.code === "Escape" && contactRunnerState.status !== "inactive") {
+          event.preventDefault();
+          contactDinoState.pointer.down = false;
+          stopContactRunner(true);
+        } else if (event.code === "Space" || event.code === "ArrowUp") {
+          event.preventDefault();
+          if (contactRunnerState.status === "inactive" || contactRunnerState.status === "gameover") {
+            startContactRunner();
+          } else if (contactRunnerState.status === "playing") {
+            runnerJump();
+          }
+        } else if (
+          (event.code === "Enter" || event.code === "NumpadEnter") &&
+          contactRunnerState.status === "gameover"
+        ) {
+          event.preventDefault();
+          startContactRunner();
+        } else if (event.code === "ArrowDown" && contactRunnerState.status === "playing") {
+          event.preventDefault();
+          contactRunnerState.isDucking = true;
+        }
+      });
+      window.addEventListener("keyup", (event) => {
+        if (event.code === "ArrowDown") {
+          contactRunnerState.isDucking = false;
+        }
+      });
+      contactRunnerRestart.addEventListener("click", () => {
+        if (state.activeSection !== "contact") return;
+        startContactRunner();
+        contactRunnerRestart.blur();
+      });
 
       initializeProjectDial();
+      contactRunnerState.bestScore = loadContactRunnerBestScore();
+      updateContactRunnerHud();
       state.projectOrbitRafId = window.requestAnimationFrame(runProjectOrbitLoop);
       initialize().catch((error) => {
         console.error(error);
@@ -1370,6 +1725,749 @@
         return a + (b - a) * t;
       }
 
+      function easeInOutValue(t) {
+        const clamped = clampValue(t, 0, 1);
+        return clamped < 0.5
+          ? 4 * clamped * clamped * clamped
+          : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
+      }
+
+      function loadContactRunnerBestScore() {
+        try {
+          const raw = window.localStorage.getItem(CONTACT_RUNNER_BEST_SCORE_KEY);
+          const parsed = Number.parseInt(raw || "", 10);
+          return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+        } catch (error) {
+          return 0;
+        }
+      }
+
+      function saveContactRunnerBestScore(value) {
+        try {
+          window.localStorage.setItem(CONTACT_RUNNER_BEST_SCORE_KEY, String(Math.max(0, value)));
+        } catch (error) {
+          // Ignore storage failures and keep the in-memory score.
+        }
+      }
+
+      function resizeContactRunnerHudCanvas(canvas, ctx) {
+        if (!canvas || !ctx) return { width: 0, height: 0 };
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.round(rect.width || canvas.clientWidth || 1));
+        const height = Math.max(1, Math.round(rect.height || canvas.clientHeight || 1));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.imageSmoothingEnabled = false;
+        return { width, height };
+      }
+
+      function formatContactRunnerScore(value) {
+        return String(Math.max(0, Math.floor(value))).padStart(5, "0").slice(-5);
+      }
+
+      function drawContactRunnerGlyph(ctx, glyph, x, y, scale = 1) {
+        const sprite = CONTACT_RUNNER_SPRITES.scoreText;
+        const glyphOrder = "0123456789HI";
+        const glyphIndex = glyphOrder.indexOf(glyph);
+        if (glyphIndex < 0 || !contactRunnerAssets.loaded || !contactRunnerAssets.image) {
+          return false;
+        }
+
+        ctx.drawImage(
+          contactRunnerAssets.image,
+          sprite.x + glyphIndex * sprite.glyphWidth,
+          sprite.y,
+          sprite.glyphWidth,
+          sprite.glyphHeight,
+          x,
+          y,
+          sprite.drawWidth * scale,
+          sprite.drawHeight * scale,
+        );
+        return true;
+      }
+
+      function drawContactRunnerBitmapText(ctx, text, x, y, scale = 1) {
+        const sprite = CONTACT_RUNNER_SPRITES.scoreText;
+        const glyphAdvance = sprite.drawWidth * scale + Math.max(1, Math.round(scale));
+        const spaceAdvance = Math.max(5, Math.round(6 * scale));
+        let cursorX = x;
+
+        for (const glyph of text) {
+          if (glyph === " ") {
+            cursorX += spaceAdvance;
+            continue;
+          }
+
+          const drew = drawContactRunnerGlyph(ctx, glyph, cursorX, y, scale);
+          if (!drew) {
+            ctx.fillStyle = "rgba(17,17,17,0.94)";
+            ctx.font = `${Math.max(10, Math.round(12 * scale))}px monospace`;
+            ctx.textBaseline = "top";
+            ctx.fillText(glyph, cursorX, y);
+          }
+          cursorX += glyphAdvance;
+        }
+
+        return cursorX - x;
+      }
+
+      function getContactRunnerBitmapTextWidth(text, scale = 1) {
+        const sprite = CONTACT_RUNNER_SPRITES.scoreText;
+        const glyphAdvance = sprite.drawWidth * scale + Math.max(1, Math.round(scale));
+        const spaceAdvance = Math.max(5, Math.round(6 * scale));
+        let width = 0;
+
+        for (const glyph of text) {
+          width += glyph === " " ? spaceAdvance : glyphAdvance;
+        }
+
+        return Math.max(0, width - Math.max(1, Math.round(scale)));
+      }
+
+      function syncContactRunnerBestScore() {
+        if (contactRunnerState.score <= contactRunnerState.bestScore) return;
+        contactRunnerState.bestScore = contactRunnerState.score;
+        saveContactRunnerBestScore(contactRunnerState.bestScore);
+      }
+
+      function getContactRunnerAudioContext() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        if (!contactRunnerAudio.context) {
+          contactRunnerAudio.context = new AudioContextClass();
+        }
+        if (contactRunnerAudio.context.state === "suspended") {
+          contactRunnerAudio.context.resume().catch(() => {});
+        }
+        return contactRunnerAudio.context;
+      }
+
+      function playContactRunnerMilestoneChime() {
+        const ctx = getContactRunnerAudioContext();
+        if (!ctx) return;
+
+        const startAt = ctx.currentTime + 0.01;
+        [880, 1174].forEach((frequency, index) => {
+          const oscillator = ctx.createOscillator();
+          const gain = ctx.createGain();
+          oscillator.type = "square";
+          oscillator.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.0001, startAt);
+          gain.gain.linearRampToValueAtTime(0.05, startAt + 0.01 + index * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.08 + index * 0.08);
+          oscillator.connect(gain);
+          gain.connect(ctx.destination);
+          oscillator.start(startAt + index * 0.08);
+          oscillator.stop(startAt + 0.1 + index * 0.08);
+        });
+      }
+
+      function createContactRunnerMoon() {
+        const scale = contactDinoState.dino ? contactDinoState.dino.scale : 1;
+        const sprite = CONTACT_RUNNER_SPRITES.moonPhases[
+          contactRunnerState.moonPhaseIndex % CONTACT_RUNNER_SPRITES.moonPhases.length
+        ];
+        return {
+          x: contactDinoState.width + 56 * scale,
+          y: Math.max(18 * scale, contactDinoState.height * 0.08),
+          speed: 12 * scale,
+          sprite,
+        };
+      }
+
+      function ensureContactRunnerMoon() {
+        if (contactRunnerState.moon) return;
+        contactRunnerState.moon = createContactRunnerMoon();
+      }
+
+      function updateContactRunnerMoon(dt) {
+        if (!contactRunnerState.moon) return;
+        contactRunnerState.moon.x -= contactRunnerState.moon.speed * dt;
+        if (contactRunnerState.moon.x + contactRunnerState.moon.sprite.drawWidth < -24) {
+          contactRunnerState.moonPhaseIndex =
+            (contactRunnerState.moonPhaseIndex + 1) % CONTACT_RUNNER_SPRITES.moonPhases.length;
+          contactRunnerState.moon = createContactRunnerMoon();
+        }
+      }
+
+      function triggerContactRunnerMilestoneFlash(scoreValue) {
+        if (!scoreValue || scoreValue % 100 !== 0) return;
+        if (scoreValue <= contactRunnerState.lastMilestoneScore) return;
+        contactRunnerState.lastMilestoneScore = scoreValue;
+        contactRunnerState.milestoneFlashValue = scoreValue;
+        contactRunnerState.milestoneFlashTimer = contactRunnerState.milestoneFlashDuration;
+        playContactRunnerMilestoneChime();
+      }
+
+      function shouldShowContactRunnerCurrentScore() {
+        if (contactRunnerState.milestoneFlashTimer <= 0) return true;
+        const elapsed =
+          contactRunnerState.milestoneFlashDuration - contactRunnerState.milestoneFlashTimer;
+        return Math.floor(elapsed / contactRunnerState.milestoneFlashStep) % 2 === 0;
+      }
+
+      function updateContactRunnerScore() {
+        const scale = contactDinoState.dino ? contactDinoState.dino.scale : 1;
+        const nextScore = Math.max(
+          contactRunnerState.score,
+          Math.floor(contactRunnerState.distance / (36 * scale)),
+        );
+        if (nextScore === contactRunnerState.score) return;
+        contactRunnerState.score = nextScore;
+        syncContactRunnerBestScore();
+        triggerContactRunnerMilestoneFlash(nextScore);
+      }
+
+      function renderContactRunnerScoreboard() {
+        const { width, height } = resizeContactRunnerHudCanvas(
+          contactRunnerScoreCanvas,
+          contactRunnerScoreContext,
+        );
+        if (!width || !height) return;
+
+        const ctx = contactRunnerScoreContext;
+        const sprite = CONTACT_RUNNER_SPRITES.scoreText;
+        const scale = width <= 132 ? 0.86 : 1;
+        const currentScoreValue =
+          contactRunnerState.milestoneFlashTimer > 0
+            ? contactRunnerState.milestoneFlashValue
+            : contactRunnerState.score;
+        const currentScore = formatContactRunnerScore(currentScoreValue);
+        const bestScore = formatContactRunnerScore(contactRunnerState.bestScore);
+        const currentWidth = getContactRunnerBitmapTextWidth(currentScore, scale);
+        const bestLabel = `HI ${bestScore}`;
+        const bestWidth = getContactRunnerBitmapTextWidth(bestLabel, scale);
+        const gap = Math.max(10, Math.round(12 * scale));
+        const y = Math.max(0, Math.round((height - sprite.drawHeight * scale) * 0.5));
+
+        ctx.clearRect(0, 0, width, height);
+
+        const currentX = Math.max(0, width - currentWidth);
+        if (shouldShowContactRunnerCurrentScore()) {
+          drawContactRunnerBitmapText(ctx, currentScore, currentX, y, scale);
+        }
+
+        const bestX = Math.max(0, currentX - gap - bestWidth);
+        drawContactRunnerBitmapText(ctx, bestLabel, bestX, y, scale);
+      }
+
+      function renderContactRunnerOverlay() {
+        const gameOverSize = resizeContactRunnerHudCanvas(
+          contactRunnerGameOverCanvas,
+          contactRunnerGameOverContext,
+        );
+        const restartSize = resizeContactRunnerHudCanvas(
+          contactRunnerRestartCanvas,
+          contactRunnerRestartContext,
+        );
+
+        if (gameOverSize.width && gameOverSize.height) {
+          const ctx = contactRunnerGameOverContext;
+          ctx.clearRect(0, 0, gameOverSize.width, gameOverSize.height);
+          const drewGameOver = drawContactRunnerSprite(
+            ctx,
+            CONTACT_RUNNER_SPRITES.gameOver,
+            0,
+            0,
+            gameOverSize.width / CONTACT_RUNNER_SPRITES.gameOver.drawWidth,
+          );
+
+          if (!drewGameOver) {
+            ctx.fillStyle = "rgba(17,17,17,0.94)";
+            ctx.font = "bold 11px monospace";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("GAME OVER", gameOverSize.width * 0.5, gameOverSize.height * 0.5);
+          }
+        }
+
+        if (restartSize.width && restartSize.height) {
+          const ctx = contactRunnerRestartContext;
+          ctx.clearRect(0, 0, restartSize.width, restartSize.height);
+          const drewRestart = drawContactRunnerSprite(
+            ctx,
+            CONTACT_RUNNER_SPRITES.restart,
+            0,
+            0,
+            restartSize.width / CONTACT_RUNNER_SPRITES.restart.drawWidth,
+          );
+
+          if (!drewRestart) {
+            ctx.strokeStyle = "rgba(17,17,17,0.94)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(restartSize.width * 0.5, restartSize.height * 0.5, 10, 0.45, Math.PI * 1.7);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(restartSize.width * 0.62, restartSize.height * 0.16);
+            ctx.lineTo(restartSize.width * 0.78, restartSize.height * 0.2);
+            ctx.lineTo(restartSize.width * 0.68, restartSize.height * 0.34);
+            ctx.stroke();
+          }
+        }
+      }
+
+      function updateContactRunnerHud() {
+        const showHud =
+          state.activeSection === "contact" &&
+          contactDinoState.renderVisible &&
+          (contactRunnerState.status === "playing" || contactRunnerState.status === "gameover");
+        const showOverlay = showHud && contactRunnerState.status === "gameover";
+
+        contactRunnerScoreboard.classList.toggle("is-visible", showHud);
+        contactRunnerScoreboard.setAttribute("aria-hidden", showHud ? "false" : "true");
+        contactRunnerOverlay.classList.toggle("is-visible", showOverlay);
+        contactRunnerOverlay.setAttribute("aria-hidden", showOverlay ? "false" : "true");
+
+        if (!showHud) return;
+        renderContactRunnerScoreboard();
+        renderContactRunnerOverlay();
+      }
+
+      function initializeContactRunnerAssets() {
+        const image = new Image();
+        image.decoding = "async";
+        image.onload = () => {
+          contactRunnerAssets.image = image;
+          contactRunnerAssets.loaded = true;
+          updateContactRunnerHud();
+        };
+        image.onerror = () => {
+          contactRunnerAssets.image = null;
+          contactRunnerAssets.loaded = false;
+          updateContactRunnerHud();
+        };
+        image.src = CONTACT_RUNNER_SPRITE_URL;
+      }
+
+      function drawContactRunnerSprite(ctx, sprite, x, y, scale, frameIndex = 0) {
+        if (!contactRunnerAssets.loaded || !contactRunnerAssets.image || !sprite) {
+          return false;
+        }
+
+        const frameOffset = sprite.frameOffset ? sprite.frameOffset * frameIndex : 0;
+        ctx.drawImage(
+          contactRunnerAssets.image,
+          sprite.x + frameOffset,
+          sprite.y,
+          sprite.width,
+          sprite.height,
+          x,
+          y,
+          sprite.drawWidth * scale,
+          sprite.drawHeight * scale,
+        );
+        return true;
+      }
+
+      function drawPixelSprite(ctx, spriteKey, x, y, pixelSize, color) {
+        const sprite = PIXEL_SPRITES[spriteKey];
+        if (!sprite) return;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        for (let row = 0; row < sprite.length; row += 1) {
+          for (let col = 0; col < sprite[row].length; col += 1) {
+            if (sprite[row][col] === "#") {
+              ctx.rect(x + col * pixelSize, y + row * pixelSize, pixelSize, pixelSize);
+            }
+          }
+        }
+        ctx.fill();
+      }
+
+      function getRunnerGroundY() {
+        const scale = contactDinoState.dino ? contactDinoState.dino.scale : getContactDinoScale();
+        const bottomPadding = clampValue(6 * scale, 6, 14);
+        return contactDinoState.height - bottomPadding;
+      }
+
+      function spawnContactRunnerCloud(forceX = null) {
+        const scale = contactDinoState.dino ? contactDinoState.dino.scale : 1;
+        const cloudSprite = CONTACT_RUNNER_SPRITES.cloud;
+        const pixelSize = Math.max(1, 2 * scale);
+        const width = cloudSprite.drawWidth * scale;
+        const height = cloudSprite.drawHeight * scale;
+        const cloudTop = Math.max(14 * scale, contactDinoState.height * 0.1);
+        const cloudBottom = Math.max(cloudTop + 10 * scale, contactDinoState.height * 0.34);
+
+        contactRunnerState.clouds.push({
+          x: forceX ?? contactDinoState.width + width,
+          y: lerpValue(cloudTop, cloudBottom, Math.random()),
+          width,
+          height,
+          pixelSize,
+          speed: (16 + Math.random() * 10) * scale,
+        });
+      }
+
+      function ensureContactRunnerClouds() {
+        if (contactRunnerState.clouds.length) return;
+
+        const width = contactDinoState.width || window.innerWidth;
+        spawnContactRunnerCloud(width * 0.18);
+        spawnContactRunnerCloud(width * 0.54);
+      }
+
+      function stopContactRunner(resetState = false) {
+        contactRunnerState.status = "inactive";
+        if (resetState) {
+          contactRunnerState.speed = 0;
+          contactRunnerState.startSpeed = 0;
+          contactRunnerState.targetX = 0;
+          contactRunnerState.transitionOriginX = 0;
+          contactRunnerState.transitionProgress = 0;
+          contactRunnerState.distance = 0;
+          contactRunnerState.score = 0;
+          contactRunnerState.milestoneFlashTimer = 0;
+          contactRunnerState.milestoneFlashValue = 0;
+          contactRunnerState.lastMilestoneScore = 0;
+          contactRunnerState.moonPhaseIndex = 0;
+          contactRunnerState.moon = null;
+          contactRunnerState.dinoVy = 0;
+          contactRunnerState.obstacles = [];
+          contactRunnerState.clouds = [];
+          contactRunnerState.spawnTimer = 0;
+          contactRunnerState.cloudSpawnTimer = 0;
+          contactRunnerState.floorOffset = 0;
+          contactRunnerState.isDucking = false;
+        }
+
+        if (contactDinoState.dino) {
+          contactDinoState.dino.groundAt = buildContactDinoGroundAt(contactDinoState.height);
+        }
+
+        if (state.activeSection === "contact" && contactDinoState.mode === "active") {
+          helpText.classList.add("is-visible");
+        }
+      }
+
+      function startContactRunner() {
+        getContactRunnerAudioContext();
+        contactRunnerState.status = "starting";
+
+        const scale = contactDinoState.dino ? contactDinoState.dino.scale : 1;
+        contactRunnerState.speed = 0;
+        contactRunnerState.startSpeed = 260 * scale;
+        contactRunnerState.targetX = contactDinoState.width * 0.15;
+        contactRunnerState.transitionOriginX = contactDinoState.dino ? contactDinoState.dino.x : contactRunnerState.targetX;
+        contactRunnerState.transitionProgress = 0;
+        contactRunnerState.distance = 0;
+        contactRunnerState.score = 0;
+        contactRunnerState.milestoneFlashTimer = 0;
+        contactRunnerState.milestoneFlashValue = 0;
+        contactRunnerState.lastMilestoneScore = 0;
+        contactRunnerState.moonPhaseIndex = 0;
+        contactRunnerState.moon = null;
+        contactRunnerState.dinoVy = 0;
+        contactRunnerState.obstacles = [];
+        contactRunnerState.clouds = [];
+        contactRunnerState.spawnTimer = 0.82;
+        contactRunnerState.cloudSpawnTimer = 0.8;
+        contactRunnerState.floorOffset = 0;
+        contactRunnerState.isDucking = false;
+
+        contactRunnerState.groundY = getRunnerGroundY();
+        contactRunnerState.dinoY = contactRunnerState.groundY;
+
+        const dino = contactDinoState.dino;
+        if (dino) {
+          dino.face = dino.x <= contactRunnerState.targetX ? 1 : -1;
+          dino.roar = 0;
+          dino.groundAt = buildContactDinoGroundAt(contactDinoState.height);
+          dino.y = dino.groundAt(dino.x) - 46 * scale;
+        }
+
+        contactDinoState.pointer.down = false;
+        lastDinoTapTime = 0;
+        helpText.classList.remove("is-visible");
+        ensureContactRunnerClouds();
+        ensureContactRunnerMoon();
+        updateContactRunnerHud();
+      }
+
+      function runnerJump() {
+        getContactRunnerAudioContext();
+        if (contactRunnerState.status !== "playing") return;
+        if (contactRunnerState.dinoY >= contactRunnerState.groundY - 1) {
+          const scale = contactDinoState.dino ? contactDinoState.dino.scale : 1;
+          const dinoHeight = 55 * scale;
+          const maxAllowedJump = Math.max(10, contactRunnerState.groundY - dinoHeight - 5);
+          const desiredJump = 75 * scale;
+          const jumpHeight = Math.min(desiredJump, maxAllowedJump);
+          const gravity = 1800 * scale;
+          contactRunnerState.dinoVy = -Math.sqrt(2 * gravity * jumpHeight);
+        }
+      }
+
+      function spawnContactRunnerObstacle() {
+        const type = Math.floor(Math.random() * 4);
+        const scale = contactDinoState.dino ? contactDinoState.dino.scale : 1;
+
+        let spriteKey;
+        let width;
+        let height;
+        let y;
+        let logicalType = 1;
+
+        if (type === 3) {
+          logicalType = 2;
+          spriteKey = "birdDown";
+          width = CONTACT_RUNNER_SPRITES.bird.drawWidth * scale;
+          height = CONTACT_RUNNER_SPRITES.bird.drawHeight * scale;
+
+          const heightLevel = Math.floor(Math.random() * 3);
+          const birdHeights = [46, 95, 120];
+          y = contactRunnerState.groundY - birdHeights[heightLevel] * scale;
+        } else if (type === 2) {
+          spriteKey = "cactus2";
+          width = (CONTACT_RUNNER_SPRITES.cactusSmall.drawWidth * 2.2) * scale;
+          height = CONTACT_RUNNER_SPRITES.cactusLarge.drawHeight * scale;
+          y = contactRunnerState.groundY - height + 4 * scale;
+        } else if (type === 1) {
+          spriteKey = "cactus3";
+          width = CONTACT_RUNNER_SPRITES.cactusLarge.drawWidth * scale;
+          height = CONTACT_RUNNER_SPRITES.cactusLarge.drawHeight * scale;
+          y = contactRunnerState.groundY - height + 4 * scale;
+        } else {
+          spriteKey = "cactus1";
+          width = CONTACT_RUNNER_SPRITES.cactusSmall.drawWidth * scale;
+          height = CONTACT_RUNNER_SPRITES.cactusSmall.drawHeight * scale;
+          y = contactRunnerState.groundY - height + 4 * scale;
+        }
+
+        const hitInset = 2 * scale;
+
+        contactRunnerState.obstacles.push({
+          x: contactDinoState.width,
+          y,
+          width,
+          height,
+          type: logicalType,
+          spriteKey,
+          pixelSize: 2 * scale,
+          hitInset,
+        });
+      }
+
+      function checkRunnerCollisions() {
+        const dino = contactDinoState.dino;
+        if (!dino) return;
+
+        const scale = dino.scale;
+        const isDucking = contactRunnerState.isDucking;
+
+        const hitX = dino.x - 5 * scale;
+        const hitY = dino.y - 25 * scale + (isDucking ? 20 * scale : 0);
+        const hitWidth = 45 * scale;
+        const hitHeight = isDucking ? 35 * scale : 55 * scale;
+
+        for (const obstacle of contactRunnerState.obstacles) {
+          const obstacleX = obstacle.x + obstacle.hitInset;
+          const obstacleY = obstacle.y + obstacle.hitInset;
+          const obstacleWidth = obstacle.width - obstacle.hitInset * 2;
+          const obstacleHeight = obstacle.height - obstacle.hitInset * 2;
+
+          if (
+            hitX < obstacleX + obstacleWidth &&
+            hitX + hitWidth > obstacleX &&
+            hitY < obstacleY + obstacleHeight &&
+            hitY + hitHeight > obstacleY
+          ) {
+            contactRunnerState.status = "gameover";
+            contactRunnerState.speed = 0;
+            contactDinoState.pointer.down = false;
+            syncContactRunnerBestScore();
+            break;
+          }
+        }
+      }
+
+      function updateContactRunner(dt) {
+        const dino = contactDinoState.dino;
+        if (!dino) return;
+
+        const scale = dino.scale;
+        updateContactRunnerMoon(dt);
+        if (contactRunnerState.milestoneFlashTimer > 0) {
+          contactRunnerState.milestoneFlashTimer = Math.max(
+            0,
+            contactRunnerState.milestoneFlashTimer - dt,
+          );
+        }
+
+        if (contactRunnerState.status === "starting") {
+          ensureContactRunnerClouds();
+          const targetX = contactRunnerState.targetX || contactDinoState.width * 0.15;
+          const totalDistance = Math.max(
+            1,
+            Math.abs(targetX - (contactRunnerState.transitionOriginX || 0)),
+          );
+          const direction = targetX >= dino.x ? 1 : -1;
+          const moveAmount = contactRunnerState.startSpeed * dt;
+          const nextX = dino.x + direction * moveAmount;
+          const arrived = direction > 0 ? nextX >= targetX : nextX <= targetX;
+          const remainingDistance = Math.abs(targetX - (arrived ? targetX : nextX));
+          const rawProgress = 1 - remainingDistance / totalDistance;
+          const transitionProgress = easeInOutValue(rawProgress);
+          const contactGroundAt = buildContactDinoGroundAt(contactDinoState.height);
+          dino.groundAt = (x) => lerpValue(contactGroundAt(x), contactRunnerState.groundY, transitionProgress);
+          contactRunnerState.transitionProgress = transitionProgress;
+
+          dino.face = direction;
+          dino.drawFace = lerpValue(dino.drawFace, dino.face, 0.18);
+          dino.x = arrived ? targetX : nextX;
+          dino.y = dino.groundAt(dino.x) - 46 * scale;
+          dino.walk += dt * (contactRunnerState.startSpeed * 0.013 / scale);
+
+          const hipNearX = dino.x - dino.face * 10 * scale;
+          const hipFarX = dino.x + dino.face * 22 * scale;
+          const legPhase = dino.walk * 1.2;
+          const stride = 26 * scale;
+          const lift = 16 * scale;
+          const currentBaseY = dino.groundAt(dino.x);
+
+          dino.footBackNear.x = hipNearX - Math.cos(legPhase) * stride;
+          dino.footBackNear.y = currentBaseY - Math.max(0, Math.sin(legPhase)) * lift;
+          dino.footBackFar.x = hipFarX - Math.cos(legPhase + Math.PI) * stride;
+          dino.footBackFar.y =
+            currentBaseY - Math.max(0, Math.sin(legPhase + Math.PI)) * lift;
+          dino.footBackNear.progress = 1;
+          dino.footBackFar.progress = 1;
+
+          for (let index = contactRunnerState.clouds.length - 1; index >= 0; index -= 1) {
+            const cloud = contactRunnerState.clouds[index];
+            cloud.x -= cloud.speed * dt * (0.2 + transitionProgress * 0.35);
+            if (cloud.x + cloud.width < 0) {
+              contactRunnerState.clouds.splice(index, 1);
+            }
+          }
+
+          if (arrived) {
+            contactRunnerState.status = "playing";
+            contactRunnerState.speed = 350 * scale;
+            contactRunnerState.groundY = getRunnerGroundY();
+            contactRunnerState.dinoY = contactRunnerState.groundY;
+            contactRunnerState.transitionProgress = 1;
+            dino.groundAt = () => contactRunnerState.groundY;
+            dino.y = contactRunnerState.groundY - 46 * scale;
+            dino.face = 1;
+            dino.drawFace = 1;
+            ensureContactRunnerClouds();
+          }
+        } else if (contactRunnerState.status === "playing") {
+          ensureContactRunnerClouds();
+          contactRunnerState.speed += 25 * scale * dt;
+          const maxSpeed = 800 * scale;
+          if (contactRunnerState.speed > maxSpeed) {
+            contactRunnerState.speed = maxSpeed;
+          }
+
+          const moveAmount = contactRunnerState.speed * dt;
+          contactRunnerState.distance += moveAmount;
+          contactRunnerState.floorOffset -= moveAmount;
+          if (contactRunnerState.floorOffset < -100 * scale) {
+            contactRunnerState.floorOffset += 100 * scale;
+          }
+          updateContactRunnerScore();
+
+          contactRunnerState.dinoVy += 1800 * scale * dt;
+          contactRunnerState.dinoY += contactRunnerState.dinoVy * dt;
+
+          if (contactRunnerState.dinoY >= contactRunnerState.groundY) {
+            contactRunnerState.dinoY = contactRunnerState.groundY;
+            contactRunnerState.dinoVy = 0;
+            dino.walk += dt * (contactRunnerState.speed * 0.012 / scale);
+          }
+
+          const targetX = contactDinoState.width * 0.15;
+          dino.x += (targetX - dino.x) * 0.1;
+          dino.y = contactRunnerState.dinoY - 46 * scale;
+          dino.face = 1;
+          dino.drawFace = 1;
+
+          const hipNearX = dino.x - dino.face * 10 * scale;
+          const hipFarX = dino.x + dino.face * 22 * scale;
+          const legPhase = dino.walk * 1.2;
+          const stride = 28 * scale;
+          const lift = 22 * scale;
+          const currentBaseY = contactRunnerState.dinoY;
+
+          let airTuck = 0;
+          if (contactRunnerState.dinoY < contactRunnerState.groundY) {
+            const jumpHeight = contactRunnerState.groundY - contactRunnerState.dinoY;
+            airTuck = Math.min(jumpHeight * 0.5, 15 * scale);
+          }
+
+          dino.footBackNear.x = hipNearX - Math.cos(legPhase) * stride;
+          dino.footBackNear.y = currentBaseY - Math.max(0, Math.sin(legPhase)) * lift - airTuck;
+          dino.footBackFar.x = hipFarX - Math.cos(legPhase + Math.PI) * stride;
+          dino.footBackFar.y =
+            currentBaseY - Math.max(0, Math.sin(legPhase + Math.PI)) * lift - airTuck;
+          dino.footBackNear.progress = 1;
+          dino.footBackFar.progress = 1;
+
+          contactRunnerState.spawnTimer -= dt;
+          if (contactRunnerState.spawnTimer <= 0) {
+            spawnContactRunnerObstacle();
+            const baseTime = 600 * scale / contactRunnerState.speed;
+            contactRunnerState.spawnTimer = baseTime * (0.8 + Math.random() * 1.5);
+          }
+
+          contactRunnerState.cloudSpawnTimer -= dt;
+          if (contactRunnerState.cloudSpawnTimer <= 0) {
+            spawnContactRunnerCloud();
+            contactRunnerState.cloudSpawnTimer = 2.2 + Math.random() * 1.8;
+          }
+
+          for (let index = contactRunnerState.obstacles.length - 1; index >= 0; index -= 1) {
+            const obstacle = contactRunnerState.obstacles[index];
+            obstacle.x -= moveAmount;
+            if (obstacle.x + obstacle.width < 0) {
+              contactRunnerState.obstacles.splice(index, 1);
+            }
+          }
+
+          for (let index = contactRunnerState.clouds.length - 1; index >= 0; index -= 1) {
+            const cloud = contactRunnerState.clouds[index];
+            cloud.x -= cloud.speed * dt;
+            if (cloud.x + cloud.width < 0) {
+              contactRunnerState.clouds.splice(index, 1);
+            }
+          }
+
+          checkRunnerCollisions();
+        } else {
+          ensureContactRunnerClouds();
+          for (let index = contactRunnerState.clouds.length - 1; index >= 0; index -= 1) {
+            const cloud = contactRunnerState.clouds[index];
+            cloud.x -= cloud.speed * dt * 0.45;
+            if (cloud.x + cloud.width < 0) {
+              contactRunnerState.clouds.splice(index, 1);
+            }
+          }
+
+          if (contactRunnerState.clouds.length < 2) {
+            spawnContactRunnerCloud();
+          }
+        }
+
+        dino.time += dt;
+        dino.roar = Math.max(0, dino.roar - dt * 1.6);
+        dino.blinkTimer -= dt;
+        if (dino.blinkTimer <= 0) {
+          dino.blink = 1;
+          dino.blinkTimer = 1.6 + Math.random() * 2.2;
+        }
+        dino.blink = Math.max(0, dino.blink - dt * 7);
+
+        const canvasRect = contactDinoCanvas.getBoundingClientRect();
+        contactDinoState.snoutViewport.x = canvasRect.left + dino.x + 30 * scale;
+        contactDinoState.snoutViewport.y = canvasRect.top + dino.y - 15 * scale;
+      }
+
       function solveTwoBoneIK(root, target, len1, len2, bendDir = 1) {
         const dx = target.x - root.x;
         const dy = target.y - root.y;
@@ -1504,11 +2602,13 @@
           contactDinoStage.setAttribute("aria-hidden", "false");
 
           if (previousSection !== "contact" || contactDinoState.mode === "parked") {
+            stopContactRunner(true);
             placeContactDino(contactDinoState.parked.x, 1);
             contactDinoState.mode = "entering";
             contactDinoState.pointer.inside = false;
             contactDinoState.pointer.down = false;
             contactDinoState.waveRadius = 0;
+            helpText.classList.remove("is-visible");
           }
           return;
         }
@@ -1518,11 +2618,13 @@
           contactDinoState.mode === "active" ||
           contactDinoState.mode === "entering"
         ) {
+          stopContactRunner(true);
           contactDinoState.renderVisible = true;
           contactDinoState.mode = "exiting";
           contactDinoState.pointer.inside = false;
           contactDinoState.pointer.down = false;
           contactDinoState.waveRadius = 0;
+          helpText.classList.remove("is-visible");
           contactDinoStage.classList.add("is-visible");
           contactDinoStage.setAttribute("aria-hidden", "false");
           return;
@@ -1530,6 +2632,7 @@
 
         if (contactDinoState.mode === "parked") {
           contactDinoState.renderVisible = false;
+          helpText.classList.remove("is-visible");
           contactDinoStage.classList.remove("is-visible");
           contactDinoStage.setAttribute("aria-hidden", "true");
         }
@@ -1594,9 +2697,18 @@
           placeContactDino(contactDinoState.parked.x, -1);
         } else {
           contactDinoState.dino.scale = getContactDinoScale(width);
-          contactDinoState.dino.groundAt = buildContactDinoGroundAt(height);
+          if (contactRunnerState.status === "inactive") {
+            contactDinoState.dino.groundAt = buildContactDinoGroundAt(height);
+          } else {
+            contactRunnerState.groundY = getRunnerGroundY();
+            contactRunnerState.dinoY = Math.min(
+              contactRunnerState.dinoY || contactRunnerState.groundY,
+              contactRunnerState.groundY,
+            );
+            contactDinoState.dino.groundAt = () => contactRunnerState.groundY;
+          }
 
-          if (contactDinoState.mode === "parked" && !contactDinoState.renderVisible) {
+          if (contactDinoState.mode === "parked" && !contactDinoState.renderVisible && contactRunnerState.status === "inactive") {
             placeContactDino(contactDinoState.parked.x, -1);
           }
         }
@@ -1650,8 +2762,41 @@
 
         contactDinoState.pointer.x = event.clientX - rect.left;
         contactDinoState.pointer.y = event.clientY - rect.top;
-        contactDinoState.pointer.down = true;
-        contactDinoState.dino.roar = 1;
+
+        const dino = contactDinoState.dino;
+        const hitX = dino.x + dino.drawFace * 40 * dino.scale;
+        const hitY = dino.y - 20 * dino.scale;
+        const dx = contactDinoState.pointer.x - hitX;
+        const dy = contactDinoState.pointer.y - hitY;
+        const distance = Math.hypot(dx, dy);
+        const isClickingDino = distance < 100 * dino.scale;
+
+        if (contactRunnerState.status === "playing") {
+          if (isClickingDino) {
+            contactDinoState.pointer.down = true;
+            dino.roar = 1;
+          } else {
+            runnerJump();
+          }
+          return;
+        }
+
+        if (contactRunnerState.status === "gameover") {
+          startContactRunner();
+          return;
+        }
+
+        if (contactRunnerState.status === "inactive" && isClickingDino) {
+          contactDinoState.pointer.down = true;
+          const now = performance.now();
+          if (now - lastDinoTapTime < 400) {
+            startContactRunner();
+            lastDinoTapTime = 0;
+          } else {
+            lastDinoTapTime = now;
+            dino.roar = 1;
+          }
+        }
       }
 
       function handleContactDinoPointerUp() {
@@ -1732,6 +2877,7 @@
 
         if (contactDinoState.mode === "entering" && Math.abs(dino.x - contactDinoState.anchor.x) < 16) {
           contactDinoState.mode = "active";
+          helpText.classList.add("is-visible");
         }
 
         if (contactDinoState.mode === "exiting" && dino.x < contactDinoState.parked.x + 12) {
@@ -1740,6 +2886,7 @@
           contactDinoState.pointer.inside = false;
           contactDinoState.pointer.down = false;
           contactDinoState.waveRadius = 0;
+          helpText.classList.remove("is-visible");
           contactDinoStage.classList.remove("is-visible");
           contactDinoStage.setAttribute("aria-hidden", "true");
         }
@@ -1839,7 +2986,27 @@
         }
 
         const eye = { x: headBase.x + dino.drawFace * 14 * scale, y: headBase.y - 7 * scale };
-        if (dino.blink > 0) {
+        if (contactRunnerState.status === "gameover") {
+          contactDinoContext.lineWidth = 1.1;
+          contactDinoContext.beginPath();
+          contactDinoContext.moveTo(
+            eye.x - dino.drawFace * 3 * scale,
+            eye.y - 3 * scale,
+          );
+          contactDinoContext.lineTo(
+            eye.x + dino.drawFace * 3 * scale,
+            eye.y + 3 * scale,
+          );
+          contactDinoContext.moveTo(
+            eye.x - dino.drawFace * 3 * scale,
+            eye.y + 3 * scale,
+          );
+          contactDinoContext.lineTo(
+            eye.x + dino.drawFace * 3 * scale,
+            eye.y - 3 * scale,
+          );
+          contactDinoContext.stroke();
+        } else if (dino.blink > 0) {
           contactDinoContext.lineWidth = 1;
           contactDinoContext.beginPath();
           contactDinoContext.moveTo(eye.x - dino.drawFace * 3 * scale, eye.y);
@@ -1898,23 +3065,208 @@
 
         const dino = contactDinoState.dino;
         const scale = dino.scale;
-        const groundY = dino.groundAt(0);
-        contactDinoContext.strokeStyle = "rgba(17,17,17,0.14)";
-        contactDinoContext.lineWidth = 1;
-        contactDinoContext.beginPath();
-        for (let x = 0; x <= width; x += 8) {
-          const y = dino.groundAt(x);
-          if (x === 0) contactDinoContext.moveTo(x, y);
-          else contactDinoContext.lineTo(x, y);
+        const runnerSceneBlend =
+          contactRunnerState.status === "starting"
+            ? contactRunnerState.transitionProgress
+            : contactRunnerState.status === "playing" || contactRunnerState.status === "gameover"
+              ? 1
+              : 0;
+        const runnerSceneActive = runnerSceneBlend > 0.001;
+        const activeGroundY = runnerSceneActive
+          ? contactRunnerState.groundY
+          : dino.groundAt(width * 0.5);
+        if (runnerSceneActive && contactRunnerState.moon) {
+          contactDinoContext.save();
+          contactDinoContext.globalAlpha = clampValue(runnerSceneBlend * 0.88, 0, 0.88);
+          drawContactRunnerSprite(
+            contactDinoContext,
+            contactRunnerState.moon.sprite,
+            contactRunnerState.moon.x,
+            contactRunnerState.moon.y,
+            scale,
+          );
+          contactDinoContext.restore();
         }
-        contactDinoContext.stroke();
+        if (runnerSceneActive && contactRunnerState.clouds.length) {
+          contactDinoContext.save();
+          contactDinoContext.globalAlpha = clampValue(runnerSceneBlend * 0.92, 0, 0.92);
+          for (const cloud of contactRunnerState.clouds) {
+            const drewCloud = drawContactRunnerSprite(
+              contactDinoContext,
+              CONTACT_RUNNER_SPRITES.cloud,
+              cloud.x,
+              cloud.y,
+              scale,
+            );
+
+            if (!drewCloud) {
+              drawPixelSprite(
+                contactDinoContext,
+                "cloud",
+                cloud.x,
+                cloud.y,
+                cloud.pixelSize,
+                "rgba(17,17,17,0.26)",
+              );
+            }
+          }
+          contactDinoContext.restore();
+        }
+
+        if (runnerSceneActive) {
+          const groundY = contactRunnerState.groundY;
+          const horizonSprite = CONTACT_RUNNER_SPRITES.horizon;
+          const horizonWidth = horizonSprite.drawWidth * scale;
+          const horizonY = groundY - horizonSprite.drawHeight * scale + 3 * scale;
+          let horizonX = -((contactRunnerState.floorOffset % horizonWidth) + horizonWidth) % horizonWidth;
+          let drewHorizon = false;
+
+          contactDinoContext.save();
+          contactDinoContext.globalAlpha = runnerSceneBlend;
+          while (horizonX < width + horizonWidth) {
+            drewHorizon = drawContactRunnerSprite(
+              contactDinoContext,
+              horizonSprite,
+              horizonX,
+              horizonY,
+              scale,
+            ) || drewHorizon;
+            horizonX += horizonWidth;
+          }
+
+          if (!drewHorizon) {
+            contactDinoContext.fillStyle = "rgba(17,17,17,0.8)";
+            contactDinoContext.fillRect(0, groundY, width, 1.5 * scale);
+
+            const pixelSize = 2 * scale;
+            for (let index = 0; index < width; index += pixelSize) {
+              let groundX = (index + contactRunnerState.floorOffset) % width;
+              if (groundX < 0) {
+                groundX += width;
+              }
+
+              const hash = Math.sin(index * 12.9898) * 43758.5453;
+              const randomness = hash - Math.floor(hash);
+              if (randomness < 0.03) {
+                contactDinoContext.fillRect(
+                  groundX,
+                  groundY + pixelSize * (Math.floor(randomness * 100) % 3 + 1),
+                  pixelSize,
+                  pixelSize,
+                );
+              } else if (randomness < 0.05) {
+                contactDinoContext.fillRect(
+                  groundX,
+                  groundY + pixelSize * (Math.floor(randomness * 100) % 2 + 1),
+                  pixelSize * 2,
+                  pixelSize,
+                );
+              } else if (randomness < 0.06) {
+                contactDinoContext.fillRect(
+                  groundX,
+                  groundY + pixelSize * 3,
+                  pixelSize * 3,
+                  pixelSize,
+                );
+              }
+            }
+          }
+          contactDinoContext.restore();
+
+          for (const obstacle of contactRunnerState.obstacles) {
+            let drewObstacle = false;
+            if (obstacle.type === 2) {
+              const frame = Math.floor(contactRunnerState.distance / 60) % 2;
+              drewObstacle = drawContactRunnerSprite(
+                contactDinoContext,
+                CONTACT_RUNNER_SPRITES.bird,
+                obstacle.x,
+                obstacle.y,
+                scale,
+                frame,
+              );
+            } else if (obstacle.spriteKey === "cactus1") {
+              drewObstacle = drawContactRunnerSprite(
+                contactDinoContext,
+                CONTACT_RUNNER_SPRITES.cactusSmall,
+                obstacle.x,
+                obstacle.y,
+                scale,
+              );
+            } else if (obstacle.spriteKey === "cactus3") {
+              drewObstacle = drawContactRunnerSprite(
+                contactDinoContext,
+                CONTACT_RUNNER_SPRITES.cactusLarge,
+                obstacle.x,
+                obstacle.y,
+                scale,
+              );
+            } else {
+              const firstX = obstacle.x;
+              const secondX = obstacle.x + CONTACT_RUNNER_SPRITES.cactusSmall.drawWidth * 0.8 * scale;
+              drewObstacle =
+                drawContactRunnerSprite(
+                  contactDinoContext,
+                  CONTACT_RUNNER_SPRITES.cactusSmall,
+                  firstX,
+                  obstacle.y + 12 * scale,
+                  scale,
+                ) || drewObstacle;
+              drewObstacle =
+                drawContactRunnerSprite(
+                  contactDinoContext,
+                  CONTACT_RUNNER_SPRITES.cactusLarge,
+                  secondX,
+                  obstacle.y,
+                  scale,
+                ) || drewObstacle;
+            }
+
+            if (!drewObstacle) {
+              let drawSpriteKey = obstacle.spriteKey;
+              if (obstacle.type === 2) {
+                const frame = Math.floor(contactRunnerState.distance / 60) % 2;
+                drawSpriteKey = frame === 0 ? "birdUp" : "birdDown";
+              }
+              drawPixelSprite(
+                contactDinoContext,
+                drawSpriteKey,
+                obstacle.x,
+                obstacle.y,
+                obstacle.pixelSize,
+                "rgba(17,17,17,0.92)",
+              );
+            }
+          }
+        }
+
+        if (runnerSceneBlend < 0.999) {
+          contactDinoContext.save();
+          contactDinoContext.globalAlpha = clampValue(1 - runnerSceneBlend * 0.9, 0.12, 1);
+          contactDinoContext.strokeStyle = "rgba(17,17,17,0.14)";
+          contactDinoContext.lineWidth = 1;
+          contactDinoContext.beginPath();
+          for (let x = 0; x <= width; x += 8) {
+            const y = dino.groundAt(x);
+            if (x === 0) {
+              contactDinoContext.moveTo(x, y);
+            } else {
+              contactDinoContext.lineTo(x, y);
+            }
+          }
+          contactDinoContext.stroke();
+          contactDinoContext.restore();
+        }
 
         const bob = Math.sin(dino.walk * 2.4) * Math.min(4.5 * scale, Math.abs(dino.vx) * 0.18);
-        const hip = { x: dino.x, y: dino.y + bob };
-        const chest = { x: hip.x + dino.drawFace * 40 * scale, y: hip.y - 15 * scale };
-        const neck1 = { x: chest.x + dino.drawFace * 16 * scale, y: chest.y - 10 * scale };
-        const neck2 = { x: neck1.x + dino.drawFace * 12 * scale, y: neck1.y - 12 * scale };
-        const headBase = { x: neck2.x + dino.drawFace * 6 * scale, y: neck2.y - 1 * scale };
+        const duckOffset = contactRunnerState.status !== "inactive" && contactRunnerState.isDucking
+          ? 18 * scale
+          : 0;
+        const hip = { x: dino.x, y: dino.y + bob + duckOffset * 0.5 };
+        const chest = { x: hip.x + dino.drawFace * 40 * scale, y: hip.y - 15 * scale + duckOffset };
+        const neck1 = { x: chest.x + dino.drawFace * 16 * scale, y: chest.y - 10 * scale + duckOffset };
+        const neck2 = { x: neck1.x + dino.drawFace * 12 * scale, y: neck1.y - 12 * scale + duckOffset };
+        const headBase = { x: neck2.x + dino.drawFace * 6 * scale, y: neck2.y - 1 * scale + duckOffset };
         const tail1 = { x: hip.x - dino.drawFace * 30 * scale, y: hip.y - 8 * scale };
         const tail2 = {
           x: tail1.x - dino.drawFace * 34 * scale,
@@ -1975,12 +3327,17 @@
           : 0.016;
         contactDinoState.lastAt = now;
         try {
-          updateContactDino(dt);
+          if (contactRunnerState.status === "inactive") {
+            updateContactDino(dt);
+          } else {
+            updateContactRunner(dt);
+          }
           renderContactDino();
+          updateContactRunnerHud();
           updateContactTextBlast();
         } catch (error) {
           console.error("Contact dino loop failed:", error);
-          state.contactSignalEffectEnabled = false;
+          contactDinoState.signalEffectEnabled = false;
           restoreContactEffectText();
         }
         contactDinoState.rafId = window.requestAnimationFrame(runContactDinoLoop);
@@ -2483,14 +3840,25 @@
       }
 
       function updateContactTextBlast() {
-        if (!state.contactSignalEffectEnabled) {
+        if (!contactDinoState.signalEffectEnabled) {
           restoreContactEffectText();
           return;
         }
 
         const items = state.contactTextItems;
-        const active = state.activeSection === "contact" && contactDinoState.waveRadius > 0;
+        const isRoaring = state.activeSection === "contact" && contactDinoState.waveRadius > 0;
+        const isPlaying = state.activeSection === "contact" && contactRunnerState.status === "playing";
+        const active = isRoaring || isPlaying;
         let hasVisibleBlast = false;
+        let trackX = contactDinoState.snoutViewport.x;
+        let trackY = contactDinoState.snoutViewport.y;
+
+        if (contactDinoState.dino) {
+          const scale = contactDinoState.dino.scale;
+          const canvasRect = contactDinoCanvas.getBoundingClientRect();
+          trackX = canvasRect.left + contactDinoState.dino.x + 15 * scale;
+          trackY = canvasRect.top + contactDinoState.dino.y - 20 * scale;
+        }
 
         items.forEach((item) => {
           const blast =
@@ -2519,22 +3887,54 @@
 
           const rect = item.getBoundingClientRect();
           const metrics = getContactTextMetrics(item);
-          const centerX = rect.left + rect.width * 0.5;
-          const centerY = rect.top + rect.height * 0.5;
-          const distance = Math.hypot(
-            centerX - contactDinoState.snoutViewport.x,
-            centerY - contactDinoState.snoutViewport.y,
-          );
-          const band = 120;
-          const targetIntensity = Math.max(
-            0,
-            Math.min(5.4, (band - Math.abs(distance - contactDinoState.waveRadius)) / 18),
-          );
+          let targetIntensity = 0;
+          let currentImpactX = blast.impactX;
+          let currentImpactY = blast.impactY;
+
+          if (isRoaring) {
+            const centerX = rect.left + rect.width * 0.5;
+            const centerY = rect.top + rect.height * 0.5;
+            const distance = Math.hypot(
+              centerX - contactDinoState.snoutViewport.x,
+              centerY - contactDinoState.snoutViewport.y,
+            );
+            const band = 120;
+            targetIntensity = Math.max(
+              targetIntensity,
+              Math.min(5.4, (band - Math.abs(distance - contactDinoState.waveRadius)) / 18),
+            );
+            currentImpactX = contactDinoState.snoutViewport.x;
+            currentImpactY = contactDinoState.snoutViewport.y;
+          }
+
+          if (isPlaying) {
+            let minCharDistance = Number.POSITIVE_INFINITY;
+            metrics.chars.forEach((charMetric) => {
+              if (charMetric.isSpace) return;
+              const charX = rect.left + charMetric.centerOffsetX;
+              const charY = rect.top + charMetric.centerOffsetY;
+              const distance = Math.hypot(charX - trackX, charY - trackY);
+              if (distance < minCharDistance) {
+                minCharDistance = distance;
+              }
+            });
+
+            const auraRadius = 110 * (contactDinoState.dino ? contactDinoState.dino.scale : 1);
+            if (minCharDistance < auraRadius) {
+              const playIntensity = Math.max(0, Math.min(5.4, (auraRadius - minCharDistance) / 12));
+              if (playIntensity > targetIntensity) {
+                targetIntensity = playIntensity;
+                currentImpactX = trackX;
+                currentImpactY = trackY;
+              }
+            }
+          }
+
           blast.intensity +=
             (targetIntensity - blast.intensity) *
-            (targetIntensity > blast.intensity ? 0.24 : 0.14);
-          blast.impactX += (contactDinoState.snoutViewport.x - blast.impactX) * 0.24;
-          blast.impactY += (contactDinoState.snoutViewport.y - blast.impactY) * 0.24;
+            (targetIntensity > blast.intensity ? 0.35 : 0.12);
+          blast.impactX += (currentImpactX - blast.impactX) * 0.3;
+          blast.impactY += (currentImpactY - blast.impactY) * 0.3;
           if (blast.intensity < 0.03) {
             blast.intensity = 0;
             if (blast.active) {
@@ -2823,6 +4223,10 @@
         return diff;
       }
 
+      function lerpAngle(a, b, t) {
+        return a + angleDiff(b, a) * t;
+      }
+
       function easeInOutSine(value) {
         return -(Math.cos(Math.PI * value) - 1) / 2;
       }
@@ -2921,6 +4325,12 @@
         }
 
         lizardState.walkCycle += lizardState.speed * 0.05;
+        const idleRelax = clampValue(
+          1 - Math.max(lizardState.speed / 1.25, distToTarget / 42),
+          0,
+          1,
+        );
+        const currentMaxBend = lerpValue(HOME_LIZARD_CONFIG.maxBend, 0.045, idleRelax);
 
         for (let index = 1; index < HOME_LIZARD_CONFIG.segments; index += 1) {
           const point = lizardState.points[index];
@@ -2928,15 +4338,51 @@
           const deltaX = previous.x - point.x;
           const deltaY = previous.y - point.y;
           let targetAngle = Math.atan2(deltaY, deltaX);
+          const straightenInfluence = clampValue(1 - index / (HOME_LIZARD_CONFIG.segments * 0.82), 0.2, 1);
+          const relaxedAngle = lerpAngle(targetAngle, head.angle, idleRelax * straightenInfluence * 0.28);
+          targetAngle = relaxedAngle;
           const diff = angleDiff(targetAngle, previous.angle);
 
-          if (Math.abs(diff) > HOME_LIZARD_CONFIG.maxBend) {
-            targetAngle = previous.angle + Math.sign(diff) * HOME_LIZARD_CONFIG.maxBend;
+          if (Math.abs(diff) > currentMaxBend) {
+            targetAngle = previous.angle + Math.sign(diff) * currentMaxBend;
           }
 
           point.angle = targetAngle;
           point.x = previous.x - Math.cos(point.angle) * HOME_LIZARD_CONFIG.segmentLength;
           point.y = previous.y - Math.sin(point.angle) * HOME_LIZARD_CONFIG.segmentLength;
+        }
+
+        if (idleRelax > 0.01) {
+          let axisX = 0;
+          let axisY = 0;
+          const rearStart = Math.max(HOME_LIZARD_CONFIG.backLegIndex - 2, 2);
+          const rearEnd = Math.min(HOME_LIZARD_CONFIG.backLegIndex + 5, HOME_LIZARD_CONFIG.segments - 2);
+
+          for (let index = rearStart; index <= rearEnd; index += 1) {
+            axisX += Math.cos(lizardState.points[index].angle);
+            axisY += Math.sin(lizardState.points[index].angle);
+          }
+
+          const rearAxis = Math.atan2(axisY, axisX);
+          const settleStrength = clampValue((idleRelax - 0.18) / 0.82, 0, 1);
+          for (let index = HOME_LIZARD_CONFIG.backLegIndex; index >= 1; index -= 1) {
+            const point = lizardState.points[index];
+            const previous = lizardState.points[index - 1];
+            const rearInfluence = clampValue(
+              1 - Math.abs(index - HOME_LIZARD_CONFIG.backLegIndex) / HOME_LIZARD_CONFIG.backLegIndex,
+              0.12,
+              1,
+            );
+            const blend = settleStrength * rearInfluence * 0.018;
+            const desiredPrevX =
+              point.x + Math.cos(rearAxis) * HOME_LIZARD_CONFIG.segmentLength;
+            const desiredPrevY =
+              point.y + Math.sin(rearAxis) * HOME_LIZARD_CONFIG.segmentLength;
+
+            previous.x = lerpValue(previous.x, desiredPrevX, blend);
+            previous.y = lerpValue(previous.y, desiredPrevY, blend);
+            previous.angle = lerpAngle(previous.angle, rearAxis, blend * 0.6);
+          }
         }
 
         for (let index = 0; index < HOME_LIZARD_CONFIG.segments; index += 1) {
@@ -2951,7 +4397,7 @@
             swayFactor = tailProgress * tailProgress * 1.8;
           }
 
-          const swayAmplitude = lizardState.speed * 0.4 * swayFactor;
+          const swayAmplitude = lizardState.speed * 0.4 * swayFactor * (1 - idleRelax * 0.94);
           const swayPhase = lizardState.walkCycle - index * 0.2;
           const swayOffset = Math.sin(swayPhase) * swayAmplitude;
 
@@ -3270,6 +4716,8 @@
           lizardState.input.mouse.x = lizardState.anchor.x;
           lizardState.input.mouse.y = lizardState.anchor.y;
         }
+        lizardState.followTarget.x = lizardState.input.mouse.x || lizardState.anchor.x;
+        lizardState.followTarget.y = lizardState.input.mouse.y || lizardState.anchor.y;
 
         setupLizard();
         startLizardLoop();
@@ -3364,6 +4812,20 @@
           const centerPoint = getHomeLizardCenterPoint();
           targetX = centerPoint.x;
           targetY = centerPoint.y;
+        }
+
+        if (lizardState.mode === "active") {
+          const followDx = targetX - lizardState.followTarget.x;
+          const followDy = targetY - lizardState.followTarget.y;
+          const followDistance = Math.hypot(followDx, followDy);
+          const followEase = clampValue(0.014 + followDistance / 2400, 0.014, 0.045);
+          lizardState.followTarget.x += followDx * followEase;
+          lizardState.followTarget.y += followDy * followEase;
+          targetX = lizardState.followTarget.x;
+          targetY = lizardState.followTarget.y;
+        } else {
+          lizardState.followTarget.x = targetX;
+          lizardState.followTarget.y = targetY;
         }
 
         const simulationSteps =
@@ -3465,6 +4927,8 @@
         lizardState.speed = 0;
         lizardState.walkCycle = 0;
         lizardState.critter = lizardState.points[0];
+        lizardState.followTarget.x = startPoint.x;
+        lizardState.followTarget.y = startPoint.y;
         lizardState.nodes = getHomeLizardNodes();
         syncHomeLizardLegs();
       }
