@@ -944,7 +944,6 @@
         dpr: 1,
         maxDpr: 1.5,
         input: {
-          keys: Array.from({ length: 230 }, () => false),
           mouse: {
             left: false,
             right: false,
@@ -996,97 +995,9 @@
         visible: false,
         snoutViewport: { x: 0, y: 0 },
         waveRadius: 0,
-        gameActive: false,
-        gameDistance: 0,
-        gameScore: 0,
-        gameBestScore: 0,
-        gameSpeed: 0,
-        gameNextSpawnAt: 0,
-        gameGroundOffset: 0,
-        gameObstacles: [],
-        gameClouds: [],
-        gameHorizonSegments: [],
-        gameSprites: {},
-        gameSpritesReady: false,
-        gameSpriteLoadPromise: null,
         rafId: 0,
         lastAt: 0,
       };
-      const CONTACT_DINO_GAME_SPRITES = {
-        cloud: {
-          key: "cloud",
-          src: "assets/contact-dino/2x-cloud.png",
-          width: 46,
-          height: 14,
-        },
-        horizon: {
-          key: "horizon",
-          src: "assets/contact-dino/2x-horizon.png",
-          width: 600,
-          height: 12,
-          variants: [0, 600],
-        },
-        obstacleSmall: {
-          key: "obstacleSmall",
-          src: "assets/contact-dino/2x-obstacle-small.png",
-          type: "CACTUS_SMALL",
-          width: 17,
-          height: 35,
-          multipleSpeed: 3,
-          minGap: 120,
-        },
-        obstacleLarge: {
-          key: "obstacleLarge",
-          src: "assets/contact-dino/2x-obstacle-large.png",
-          type: "CACTUS_LARGE",
-          width: 25,
-          height: 50,
-          multipleSpeed: 6,
-          minGap: 120,
-        },
-        text: {
-          key: "text",
-          src: "assets/contact-dino/2x-text.png",
-          glyphWidth: 10,
-          glyphHeight: 13,
-          advance: 11,
-        },
-      };
-
-      function preloadContactDinoGameSprites() {
-        if (contactDinoState.gameSpriteLoadPromise) {
-          return contactDinoState.gameSpriteLoadPromise;
-        }
-
-        const spriteEntries = Object.values(CONTACT_DINO_GAME_SPRITES);
-        contactDinoState.gameSpriteLoadPromise = Promise.all(
-          spriteEntries.map(
-            (sprite) =>
-              new Promise((resolve, reject) => {
-                const image = new Image();
-                image.decoding = "async";
-                image.onload = () => {
-                  contactDinoState.gameSprites[sprite.key] = image;
-                  resolve();
-                };
-                image.onerror = reject;
-                image.src = sprite.src;
-              }),
-          ),
-        )
-          .then(() => {
-            contactDinoState.gameSpritesReady = true;
-          })
-          .catch((error) => {
-            console.error("Failed to load contact dino sprites.", error);
-            contactDinoState.gameSpritesReady = false;
-            contactDinoState.gameSpriteLoadPromise = null;
-          });
-
-        return contactDinoState.gameSpriteLoadPromise;
-      }
-
-      preloadContactDinoGameSprites();
 
       prepareNavButtonLetters();
       prepareContactTextLetters();
@@ -1110,12 +1021,9 @@
       window.addEventListener("pointercancel", handleLizardPointerUp, { passive: true });
       window.addEventListener("touchstart", handleLizardTouch, { passive: true });
       window.addEventListener("touchmove", handleLizardTouch, { passive: true });
-      window.addEventListener("keydown", handleLizardKeyDown);
-      window.addEventListener("keyup", handleLizardKeyUp);
       window.addEventListener("pointermove", handleContactDinoPointerMove, { passive: true });
       window.addEventListener("pointerdown", handleContactDinoPointerDown, { passive: true });
       window.addEventListener("pointerup", handleContactDinoPointerUp, { passive: true });
-      window.addEventListener("keydown", handleContactDinoKeydown);
       document.addEventListener("visibilitychange", handleVisibilityChange);
 
       if (document.fonts?.ready) {
@@ -1517,10 +1425,6 @@
         return Math.min(1.75, Math.max(1.28, width / 430));
       }
 
-      function getContactDinoGameVisualScale() {
-        return clampValue(contactDinoState.height / 150, 1, 1.45);
-      }
-
       function getContactDinoAnchorPoint() {
         return {
           x: Math.max(170, contactDinoState.width * 0.42),
@@ -1544,23 +1448,6 @@
           height * 0.84 + Math.sin(x * 0.024) * 5 + Math.sin(x * 0.009 + 1.2) * 4;
       }
 
-      function getContactDinoGameStartX() {
-        return Math.max(132, contactDinoState.width * 0.26);
-      }
-
-      function getRandomContactDinoHorizonSourceX() {
-        const variants = CONTACT_DINO_GAME_SPRITES.horizon.variants;
-        return variants[Math.random() > 0.5 ? 1 : 0];
-      }
-
-      function resetContactDinoGameHorizon() {
-        const segmentWidth = CONTACT_DINO_GAME_SPRITES.horizon.width * getContactDinoGameVisualScale();
-        contactDinoState.gameHorizonSegments = [
-          { x: 0, sourceX: 0 },
-          { x: segmentWidth, sourceX: CONTACT_DINO_GAME_SPRITES.horizon.width },
-        ];
-      }
-
       function updateContactDinoAnchors() {
         const anchorPoint = getContactDinoAnchorPoint();
         const parkedPoint = getContactDinoParkedPoint();
@@ -1581,7 +1468,6 @@
         dino.y = dino.groundAt(x) - 46 * dino.scale;
         dino.vx = 0;
         dino.vy = 0;
-        dino.jumpVy = 0;
         dino.face = face;
         dino.drawFace = face;
         dino.roar = 0;
@@ -1602,110 +1488,6 @@
         );
       }
 
-      function resetContactDinoGame() {
-        contactDinoState.gameActive = false;
-        contactDinoState.gameDistance = 0;
-        contactDinoState.gameScore = 0;
-        contactDinoState.gameSpeed = 0;
-        contactDinoState.gameNextSpawnAt = 0;
-        contactDinoState.gameGroundOffset = 0;
-        contactDinoState.gameObstacles = [];
-        contactDinoState.gameClouds = [];
-        resetContactDinoGameHorizon();
-
-        if (contactDinoState.dino) {
-          contactDinoState.dino.groundAt = buildContactDinoGroundAt(contactDinoState.height);
-          contactDinoState.dino.jumpVy = 0;
-        }
-      }
-
-      function resetContactDinoGameClouds() {
-        const visualScale = getContactDinoGameVisualScale();
-        const cloudWidth = CONTACT_DINO_GAME_SPRITES.cloud.width * visualScale;
-        contactDinoState.gameClouds = [
-          { x: contactDinoState.width * 0.52, y: 34 * visualScale, width: cloudWidth },
-          { x: contactDinoState.width * 0.8, y: 58 * visualScale, width: cloudWidth },
-          { x: contactDinoState.width * 1.12, y: 44 * visualScale, width: cloudWidth },
-        ];
-      }
-
-      function spawnContactDinoGameObstacle() {
-        const dino = contactDinoState.dino;
-        if (!dino) return;
-
-        const visualScale = getContactDinoGameVisualScale();
-        const runnerSpeed = contactDinoState.gameSpeed / 60;
-        const variants = [
-          CONTACT_DINO_GAME_SPRITES.obstacleSmall,
-          CONTACT_DINO_GAME_SPRITES.obstacleLarge,
-        ];
-        const variant = variants[Math.floor(Math.random() * variants.length)];
-        let size = getRandomNum(1, 3);
-        if (size > 1 && variant.multipleSpeed > runnerSpeed) {
-          size = 1;
-        }
-
-        const width = variant.width * size * visualScale;
-        const height = variant.height * visualScale;
-        const minGap = Math.round(width * runnerSpeed + variant.minGap * 0.6 * visualScale);
-        const maxGap = Math.round(minGap * 1.5);
-        const gap = getRandomNum(minGap, maxGap);
-        contactDinoState.gameObstacles.push({
-          type: variant.type,
-          x: contactDinoState.width,
-          width,
-          height,
-          size,
-          sourceX: variant.width * size * (0.5 * (size - 1)),
-          gap,
-        });
-      }
-
-      function startContactDinoGame() {
-        preloadContactDinoGameSprites();
-
-        if (!contactDinoState.dino) {
-          contactDinoState.dino = createContactDino();
-        }
-
-        const dino = contactDinoState.dino;
-        dino.scale = getContactDinoScale();
-        dino.groundAt = buildContactDinoGroundAt(contactDinoState.height, true);
-        dino.x = getContactDinoGameStartX();
-        dino.y = dino.groundAt(dino.x) - 46 * dino.scale;
-        dino.vx = 0;
-        dino.vy = 0;
-        dino.jumpVy = 0;
-        dino.face = 1;
-        dino.drawFace = 1;
-        dino.walk = 0;
-        dino.roar = 0;
-        dino.footBackNear = new ContactFootStepper(
-          dino.x - 24 * dino.scale,
-          dino.groundAt(dino.x - 24 * dino.scale),
-          28 * dino.scale,
-          16 * dino.scale,
-        );
-        dino.footBackFar = new ContactFootStepper(
-          dino.x + 12 * dino.scale,
-          dino.groundAt(dino.x + 12 * dino.scale),
-          28 * dino.scale,
-          16 * dino.scale,
-        );
-
-        contactDinoState.pointer.inside = false;
-        contactDinoState.pointer.down = false;
-        contactDinoState.gameActive = true;
-        contactDinoState.gameDistance = 0;
-        contactDinoState.gameScore = 0;
-        contactDinoState.gameSpeed = 360;
-        contactDinoState.gameGroundOffset = 0;
-        contactDinoState.gameObstacles = [];
-        resetContactDinoGameHorizon();
-        resetContactDinoGameClouds();
-        contactDinoState.gameNextSpawnAt = dino.time + 0.9;
-      }
-
       function updateContactDinoState(previousSection = "") {
         const showContact = state.activeSection === "contact";
         contactDinoState.visible = showContact;
@@ -1722,7 +1504,6 @@
           contactDinoStage.setAttribute("aria-hidden", "false");
 
           if (previousSection !== "contact" || contactDinoState.mode === "parked") {
-            resetContactDinoGame();
             placeContactDino(contactDinoState.parked.x, 1);
             contactDinoState.mode = "entering";
             contactDinoState.pointer.inside = false;
@@ -1737,7 +1518,6 @@
           contactDinoState.mode === "active" ||
           contactDinoState.mode === "entering"
         ) {
-          resetContactDinoGame();
           contactDinoState.renderVisible = true;
           contactDinoState.mode = "exiting";
           contactDinoState.pointer.inside = false;
@@ -1770,7 +1550,6 @@
           roar: 0,
           blink: 0,
           blinkTimer: 1.4,
-          jumpVy: 0,
           footBackNear: null,
           footBackFar: null,
           scale: getContactDinoScale(width),
@@ -1815,18 +1594,11 @@
           placeContactDino(contactDinoState.parked.x, -1);
         } else {
           contactDinoState.dino.scale = getContactDinoScale(width);
-          contactDinoState.dino.groundAt = buildContactDinoGroundAt(
-            height,
-            contactDinoState.gameActive,
-          );
+          contactDinoState.dino.groundAt = buildContactDinoGroundAt(height);
 
           if (contactDinoState.mode === "parked" && !contactDinoState.renderVisible) {
             placeContactDino(contactDinoState.parked.x, -1);
           }
-        }
-
-        if (contactDinoState.gameActive && contactDinoState.mode === "active") {
-          startContactDinoGame();
         }
 
         if (!contactDinoState.pointer.inside) {
@@ -1886,129 +1658,11 @@
         contactDinoState.pointer.down = false;
       }
 
-      function handleContactDinoKeydown(event) {
-        if (state.activeSection !== "contact" || contactDinoState.mode !== "active") return;
-
-        if (event.code === "Space") {
-          event.preventDefault();
-          startContactDinoGame();
-        }
-      }
-
       function getContactDinoSnoutOffset(face, scale) {
         return {
           x: face * 127 * scale,
           y: -37 * scale,
         };
-      }
-
-      function updateContactDinoGame(dt) {
-        const dino = contactDinoState.dino;
-        if (!dino) return;
-
-        const scale = dino.scale;
-        const visualScale = getContactDinoGameVisualScale();
-        const baseGround = dino.groundAt(0);
-        const baseY = baseGround - 46 * scale;
-
-        contactDinoState.gameDistance += contactDinoState.gameSpeed * dt;
-        contactDinoState.gameScore = Math.round(contactDinoState.gameDistance * 0.025);
-        contactDinoState.gameBestScore = Math.max(
-          contactDinoState.gameBestScore,
-          contactDinoState.gameScore,
-        );
-        contactDinoState.gameSpeed = Math.min(720, contactDinoState.gameSpeed + dt * 60);
-        dino.x = lerpValue(dino.x, getContactDinoGameStartX(), 0.12);
-        dino.face = 1;
-        dino.drawFace = lerpValue(dino.drawFace, 1, 0.18);
-        dino.roar = 0;
-
-        if (dino.time >= contactDinoState.gameNextSpawnAt) {
-          spawnContactDinoGameObstacle();
-          const latestObstacle =
-            contactDinoState.gameObstacles[contactDinoState.gameObstacles.length - 1];
-          const gapSeconds = latestObstacle ? latestObstacle.gap / contactDinoState.gameSpeed : 0.9;
-          contactDinoState.gameNextSpawnAt = dino.time + gapSeconds;
-        }
-
-        const horizonSprite = CONTACT_DINO_GAME_SPRITES.horizon;
-        const segmentWidth = horizonSprite.width * visualScale;
-        const horizonIncrement = contactDinoState.gameSpeed * dt;
-        contactDinoState.gameHorizonSegments.forEach((segment) => {
-          segment.x -= horizonIncrement;
-        });
-        contactDinoState.gameHorizonSegments.forEach((segment, index) => {
-          if (segment.x <= -segmentWidth) {
-            const sibling = contactDinoState.gameHorizonSegments[index === 0 ? 1 : 0];
-            segment.x = sibling.x + segmentWidth;
-            segment.sourceX = getRandomContactDinoHorizonSourceX();
-          }
-        });
-
-        contactDinoState.gameObstacles.forEach((obstacle) => {
-          obstacle.x -= contactDinoState.gameSpeed * dt;
-        });
-        contactDinoState.gameObstacles = contactDinoState.gameObstacles.filter(
-          (obstacle) => obstacle.x + obstacle.width > -40 * visualScale,
-        );
-        contactDinoState.gameClouds.forEach((cloud) => {
-          cloud.x -= contactDinoState.gameSpeed * dt * 0.18;
-          if (cloud.x + cloud.width < -12 * visualScale) {
-            cloud.x = contactDinoState.width + 24 * visualScale + Math.random() * 80 * visualScale;
-            cloud.y = getRandomNum(30, 71) * visualScale;
-            cloud.width = CONTACT_DINO_GAME_SPRITES.cloud.width * visualScale;
-          }
-        });
-
-        const nearestObstacle = contactDinoState.gameObstacles.find(
-          (obstacle) => obstacle.x + obstacle.width >= dino.x + 18 * scale,
-        );
-
-        const isGrounded = dino.y >= baseY - 1;
-        if (nearestObstacle && isGrounded) {
-          const distanceToObstacle = nearestObstacle.x - (dino.x + 58 * scale);
-          const jumpWindow = 90 * scale + contactDinoState.gameSpeed * 0.14;
-          if (distanceToObstacle <= jumpWindow && distanceToObstacle >= 12 * scale) {
-            dino.jumpVy = -780 * scale;
-          }
-        }
-
-        dino.jumpVy += 2050 * scale * dt;
-        dino.y += dino.jumpVy * dt;
-        if (dino.y > baseY) {
-          dino.y = baseY;
-          dino.jumpVy = 0;
-        }
-
-        const dinoFront = dino.x + 64 * scale;
-        const dinoBack = dino.x - 38 * scale;
-        const dinoTop = dino.y - 58 * scale;
-        const dinoBottom = dino.y + 18 * scale;
-        const collided = contactDinoState.gameObstacles.some((obstacle) => {
-          const obstacleLeft = obstacle.x;
-          const obstacleRight = obstacle.x + obstacle.width;
-          const obstacleTop = baseGround - obstacle.height;
-          const obstacleBottom = baseGround;
-          return (
-            dinoFront >= obstacleLeft &&
-            dinoBack <= obstacleRight &&
-            dinoBottom >= obstacleTop &&
-            dinoTop <= obstacleBottom
-          );
-        });
-
-        if (collided) {
-          startContactDinoGame();
-          return;
-        }
-
-        dino.vx = contactDinoState.gameSpeed * 0.11;
-        dino.walk += dt * (5.8 + contactDinoState.gameSpeed * 0.012);
-
-        const hipNearX = dino.x - 10 * scale;
-        const hipFarX = dino.x + 22 * scale;
-        dino.footBackNear.update(hipNearX, dino.groundAt(hipNearX), dino.vx * 0.12, 1, dt);
-        dino.footBackFar.update(hipFarX, dino.groundAt(hipFarX), dino.vx * 0.12, 1, dt);
       }
 
       function updateContactDino(dt) {
@@ -2024,11 +1678,6 @@
         }
         dino.blink = Math.max(0, dino.blink - dt * 7);
         updateContactDinoAnchors();
-
-        if (contactDinoState.gameActive && contactDinoState.mode === "active") {
-          updateContactDinoGame(dt);
-          return;
-        }
 
         let desiredFace = dino.face;
         let targetX = dino.x;
@@ -2237,111 +1886,6 @@
           dino.roar > 0 ? 42 * scale + (1 - dino.roar) * 360 : 0;
       }
 
-      function drawContactDinoGameObstacle(obstacle, groundY) {
-        const spriteKey = obstacle.type === "CACTUS_LARGE" ? "obstacleLarge" : "obstacleSmall";
-        const sprite = CONTACT_DINO_GAME_SPRITES[spriteKey];
-        const image = contactDinoState.gameSprites[sprite.key];
-        if (!image) return;
-
-        contactDinoContext.drawImage(
-          image,
-          obstacle.sourceX * 2,
-          0,
-          sprite.width * obstacle.size * 2,
-          sprite.height * 2,
-          Math.round(obstacle.x),
-          Math.round(groundY - obstacle.height),
-          Math.round(obstacle.width),
-          Math.round(obstacle.height),
-        );
-      }
-
-      function drawContactDinoGameCloud(cloud) {
-        const sprite = CONTACT_DINO_GAME_SPRITES.cloud;
-        const image = contactDinoState.gameSprites[sprite.key];
-        if (!image) return;
-
-        const visualScale = getContactDinoGameVisualScale();
-        contactDinoContext.drawImage(
-          image,
-          0,
-          0,
-          sprite.width * 2,
-          sprite.height * 2,
-          Math.round(cloud.x),
-          Math.round(cloud.y),
-          Math.round(sprite.width * visualScale),
-          Math.round(sprite.height * visualScale),
-        );
-      }
-
-      function drawContactDinoGameGround(groundY) {
-        const sprite = CONTACT_DINO_GAME_SPRITES.horizon;
-        const image = contactDinoState.gameSprites[sprite.key];
-        if (!image) return;
-
-        const visualScale = getContactDinoGameVisualScale();
-        const segmentWidth = sprite.width * visualScale;
-        const targetY = groundY - sprite.height * visualScale + 1;
-
-        contactDinoState.gameHorizonSegments.forEach((segment) => {
-          contactDinoContext.drawImage(
-            image,
-            segment.sourceX * 2,
-            0,
-            sprite.width * 2,
-            sprite.height * 2,
-            Math.round(segment.x),
-            Math.round(targetY),
-            Math.round(segmentWidth),
-            Math.round(sprite.height * visualScale),
-          );
-        });
-      }
-
-      function drawContactDinoGameHud() {
-        const sprite = CONTACT_DINO_GAME_SPRITES.text;
-        const image = contactDinoState.gameSprites[sprite.key];
-        if (!image) return;
-
-        const visualScale = getContactDinoGameVisualScale();
-        const glyphWidth = sprite.glyphWidth * visualScale;
-        const glyphHeight = sprite.glyphHeight * visualScale;
-        const advance = sprite.advance * visualScale;
-        const top = 6 * visualScale;
-        const scoreText = String(contactDinoState.gameScore).padStart(5, "0");
-        const hiText = String(contactDinoState.gameBestScore).padStart(5, "0");
-        const hiGlyphs = [10, 11, null, ...hiText.split("").map((digit) => Number(digit))];
-        const currentGlyphs = scoreText.split("").map((digit) => Number(digit));
-
-        function drawGlyphRow(glyphs, startX, opacity = 1) {
-          contactDinoContext.save();
-          contactDinoContext.globalAlpha = opacity;
-          glyphs.forEach((glyph, index) => {
-            if (glyph === null) return;
-            contactDinoContext.drawImage(
-              image,
-              glyph * sprite.glyphWidth * 2,
-              0,
-              sprite.glyphWidth * 2,
-              sprite.glyphHeight * 2,
-              Math.round(startX + index * advance),
-              Math.round(top),
-              Math.round(glyphWidth),
-              Math.round(glyphHeight),
-            );
-          });
-          contactDinoContext.restore();
-        }
-
-        const currentWidth = currentGlyphs.length * advance;
-        const hiWidth = hiGlyphs.length * advance;
-        const currentX = contactDinoState.width - 18 - currentWidth;
-        const hiX = currentX - advance - hiWidth;
-        drawGlyphRow(hiGlyphs, hiX, 0.8);
-        drawGlyphRow(currentGlyphs, currentX, 1);
-      }
-
       function renderContactDino() {
         if (!contactDinoContext || !contactDinoState.dino) return;
 
@@ -2355,30 +1899,17 @@
         const dino = contactDinoState.dino;
         const scale = dino.scale;
         const groundY = dino.groundAt(0);
-
-        if (contactDinoState.gameActive) {
-          contactDinoState.gameClouds.forEach((cloud) => {
-            drawContactDinoGameCloud(cloud);
-          });
-          drawContactDinoGameGround(groundY);
-          contactDinoState.gameObstacles.forEach((obstacle) => {
-            drawContactDinoGameObstacle(obstacle, groundY);
-          });
-        } else {
-          contactDinoContext.strokeStyle = "rgba(17,17,17,0.14)";
-          contactDinoContext.lineWidth = 1;
-          contactDinoContext.beginPath();
-          for (let x = 0; x <= width; x += 8) {
-            const y = dino.groundAt(x);
-            if (x === 0) contactDinoContext.moveTo(x, y);
-            else contactDinoContext.lineTo(x, y);
-          }
-          contactDinoContext.stroke();
+        contactDinoContext.strokeStyle = "rgba(17,17,17,0.14)";
+        contactDinoContext.lineWidth = 1;
+        contactDinoContext.beginPath();
+        for (let x = 0; x <= width; x += 8) {
+          const y = dino.groundAt(x);
+          if (x === 0) contactDinoContext.moveTo(x, y);
+          else contactDinoContext.lineTo(x, y);
         }
+        contactDinoContext.stroke();
 
-        const bob = contactDinoState.gameActive
-          ? Math.sin(dino.walk * 2.6) * Math.min(2.6 * scale, Math.abs(dino.vx) * 0.03)
-          : Math.sin(dino.walk * 2.4) * Math.min(4.5 * scale, Math.abs(dino.vx) * 0.18);
+        const bob = Math.sin(dino.walk * 2.4) * Math.min(4.5 * scale, Math.abs(dino.vx) * 0.18);
         const hip = { x: dino.x, y: dino.y + bob };
         const chest = { x: hip.x + dino.drawFace * 40 * scale, y: hip.y - 15 * scale };
         const neck1 = { x: chest.x + dino.drawFace * 16 * scale, y: chest.y - 10 * scale };
@@ -2430,18 +1961,12 @@
         );
         drawContactDinoArm(shoulderNear, dino.walk, false);
 
-        const jawOpen = contactDinoState.gameActive
-          ? 0
-          : contactDinoState.pointer.down
-            ? 12 * scale
-            : dino.roar > 0
-              ? 8 * scale
-              : 0;
+        const jawOpen = contactDinoState.pointer.down
+          ? 12 * scale
+          : dino.roar > 0
+            ? 8 * scale
+            : 0;
         drawContactDinoHead(headBase, jawOpen);
-
-        if (contactDinoState.gameActive) {
-          drawContactDinoGameHud();
-        }
       }
 
       function runContactDinoLoop(now) {
@@ -3769,18 +3294,6 @@
         if (event.button === 0) lizardState.input.mouse.left = false;
         if (event.button === 1) lizardState.input.mouse.middle = false;
         if (event.button === 2) lizardState.input.mouse.right = false;
-      }
-
-      function handleLizardKeyDown(event) {
-        if (event.keyCode >= 0 && event.keyCode < lizardState.input.keys.length) {
-          lizardState.input.keys[event.keyCode] = true;
-        }
-      }
-
-      function handleLizardKeyUp(event) {
-        if (event.keyCode >= 0 && event.keyCode < lizardState.input.keys.length) {
-          lizardState.input.keys[event.keyCode] = false;
-        }
       }
 
       function handleLizardTouch(event) {
