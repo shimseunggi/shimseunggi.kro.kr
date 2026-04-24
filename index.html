@@ -46,11 +46,6 @@
       .nav-button,
       .contact-line,
       .contact-kicker,
-      .about-kicker,
-      .about-lead,
-      .about-copy p,
-      .about-meta-label,
-      .about-meta-value,
       .projects-node-title {
         font-kerning: normal;
         text-rendering: geometricPrecision;
@@ -60,9 +55,12 @@
       }
 
       svg {
+        position: fixed;
+        inset: 0;
         display: block;
         width: 100vw;
         height: 100vh;
+        pointer-events: none;
       }
 
       .site-nav {
@@ -187,99 +185,45 @@
 
       .about-panel {
         position: fixed;
-        right: 48px;
-        top: 50%;
+        inset: 118px 48px 36px 48px;
         z-index: 3;
+        box-sizing: border-box;
         display: grid;
-        gap: 18px;
-        width: min(640px, calc(100vw - 120px));
+        align-content: start;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: clamp(36px, 6vw, 112px);
+        row-gap: 18px;
+        padding-left: clamp(520px, 40vw, 980px);
+        overflow: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
         opacity: 0;
         pointer-events: none;
-        transform: translate3d(72px, -50%, 0);
-        transition:
-          opacity 260ms ease,
-          transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+        transform: none;
+        transition: opacity 200ms ease;
       }
 
       .about-panel.is-visible {
         opacity: 1;
         pointer-events: auto;
-        transform: translate3d(0, -50%, 0);
       }
 
-      .about-card {
-        display: grid;
-        gap: 16px;
-        padding: 22px 24px 24px;
-        border: 1px solid rgba(17, 17, 17, 0.08);
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.58)),
-          rgba(255, 255, 255, 0.64);
-        box-shadow:
-          0 12px 42px rgba(17, 17, 17, 0.08),
-          inset 0 1px 0 rgba(255, 255, 255, 0.42);
-        backdrop-filter: blur(16px);
+      .about-panel .contact-line,
+      .about-panel .contact-kicker {
+        width: min(620px, 100%);
+        max-width: min(620px, 100%);
       }
 
-      .about-kicker {
-        color: rgba(17, 17, 17, 0.58);
-        font-size: 0.78rem;
-        font-weight: 700;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
+      .about-panel .about-item.is-center {
+        grid-column: 1;
+        justify-self: start;
+        text-align: left;
       }
 
-      .about-lead {
-        margin: 0;
-        color: rgba(17, 17, 17, 0.92);
-        font-size: clamp(1.5rem, 2.6vw, 2.6rem);
-        font-weight: 560;
-        line-height: 0.92;
-        letter-spacing: -0.075em;
-        text-wrap: balance;
-        text-shadow: var(--type-shadow-dark);
-      }
-
-      .about-copy {
-        display: grid;
-        gap: 10px;
-        max-width: 34rem;
-      }
-
-      .about-copy p {
-        margin: 0;
-        color: rgba(17, 17, 17, 0.76);
-        font-size: clamp(0.98rem, 1.25vw, 1.08rem);
-        line-height: 1.46;
-        letter-spacing: -0.03em;
-      }
-
-      .about-meta {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .about-meta-item {
-        display: grid;
-        gap: 5px;
-        padding-top: 12px;
-        border-top: 1px solid rgba(17, 17, 17, 0.1);
-      }
-
-      .about-meta-label {
-        color: rgba(17, 17, 17, 0.48);
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .about-meta-value {
-        color: rgba(17, 17, 17, 0.86);
-        font-size: 0.94rem;
-        line-height: 1.26;
-        letter-spacing: -0.03em;
+      .about-panel .about-item.is-right {
+        grid-column: 2;
+        justify-self: start;
+        text-align: left;
       }
 
       .contact-dino-stage {
@@ -746,16 +690,10 @@
         }
 
         .about-panel {
-          right: 18px;
-          width: min(560px, calc(100vw - 36px));
-        }
-
-        .about-card {
-          padding: 18px 18px 20px;
-        }
-
-        .about-meta {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          inset: 94px 18px 24px 12px;
+          column-gap: 32px;
+          row-gap: 12px;
+          padding-left: clamp(200px, 24vw, 360px);
         }
 
         .contact-dino-stage {
@@ -809,28 +747,17 @@
         }
 
         .about-panel {
-          right: 14px;
-          top: auto;
-          bottom: 154px;
-          width: min(340px, calc(100vw - 28px));
-          transform: translate3d(40px, 0, 0);
+          inset: 76px 14px 18px 10px;
+          grid-template-columns: minmax(0, 1fr);
+          row-gap: 10px;
+          padding-left: 0;
         }
 
-        .about-panel.is-visible {
-          transform: translate3d(0, 0, 0);
-        }
-
-        .about-lead {
-          font-size: 1.46rem;
-        }
-
-        .about-copy p {
-          font-size: 0.94rem;
-        }
-
-        .about-meta {
-          grid-template-columns: 1fr;
-          gap: 10px;
+        .about-panel .about-item.is-center,
+        .about-panel .about-item.is-right {
+          grid-column: 1;
+          justify-self: start;
+          text-align: left;
         }
 
         .contact-line {
@@ -884,6 +811,7 @@
           width: min(66vw, 300px);
         }
       }
+
     </style>
   <script type="text/javascript" nonce="e4de729c3a5d4ad69481f644431" src="//local.adguard.org?ts=1776780348016&amp;type=content-script&amp;dmn=chatgpt.com&amp;url=https%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000000134720698853b528085ded0%26ts%3D493550%26p%3Dfs%26cid%3D1%26sig%3Dc89ddd152bca42ba0f4d9aaeb813a90c6003719d8355d73956f1edbb017495b6%26v%3D0&amp;app=com.apple.Safari&amp;css=2&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1&amp;stealth=1&amp;st-push&amp;st-loc&amp;st-java&amp;st-dnt"></script><script type="text/javascript" nonce="e4de729c3a5d4ad69481f644431" src="//local.adguard.org?ts=1776780348016&amp;name=AdGuard%20Extra&amp;type=user-script"></script></head>
   <body data-section="home">
@@ -1160,6 +1088,24 @@
           };
         },
       );
+      const ABOUT_CONTENT = [
+        { type: "line", column: "center", text: "What I like" },
+        { type: "line", column: "right", text: "Rocket" },
+        { type: "line", column: "right", text: "Coding" },
+        { type: "line", column: "right", text: "Game" },
+        { type: "line", column: "center", text: "" },
+        { type: "line", column: "center", text: "Experience" },
+        { type: "line", column: "right", text: "" },
+        { type: "line", column: "right", text: "" },
+        { type: "line", column: "center", text: "2025 - 2026" },
+        { type: "line", column: "right", text: "NURA" },
+        { type: "line", column: "center", text: "2024 -" },
+        { type: "line", column: "right", text: "Hanyang Univ. ERICA" },
+        { type: "line", column: "center", text: "2022 - 2024" },
+        { type: "line", column: "right", text: "GJHS 36th" },
+        { type: "line", column: "center", text: "2020 - 2022" },
+        { type: "line", column: "right", text: "DAYDREAM 4th" },
+      ];
 
       const state = {
         source: null,
@@ -1173,6 +1119,7 @@
         rafId: 0,
         lastRenderAt: 0,
         projectNodes: [],
+        aboutTextItems: [],
         contactTextItems: [],
         activeProjectIndex: 0,
         activeRingIndex: 0,
@@ -1200,6 +1147,8 @@
         navIntroScrambleRunning: false,
         navIntroScrambleRafId: 0,
         navIntroScrambleTimerId: 0,
+        aboutIntroScrambleRafId: 0,
+        aboutIntroScrambleTimerId: 0,
         contactIntroScrambleRafId: 0,
         contactIntroScrambleTimerId: 0,
         lizardSignalEffectEnabled: true,
@@ -1316,7 +1265,9 @@
       let lastDinoTapTime = 0;
       initializeContactRunnerAssets();
 
+      initializeAboutPanel();
       prepareNavButtonLetters();
+      prepareAboutTextLetters();
       prepareContactTextLetters();
 
       window.addEventListener("beforeunload", cleanupSource);
@@ -1690,6 +1641,9 @@
         });
         aboutPanel.classList.toggle("is-visible", showAbout);
         aboutPanel.setAttribute("aria-hidden", String(!showAbout));
+        if (showAbout && previousSection !== "about") {
+          queueAboutIntroScramble();
+        }
         contactPanel.classList.toggle("is-visible", showContact);
         contactPanel.setAttribute("aria-hidden", String(!showContact));
         if (showContact && previousSection !== "contact") {
@@ -3430,6 +3384,45 @@
         });
       }
 
+      function initializeAboutPanel() {
+        aboutPanel.textContent = "";
+        ABOUT_CONTENT.forEach(({ type, column = "right", text }) => {
+          const item = document.createElement("div");
+          item.className = `${type === "kicker" ? "contact-kicker" : "contact-line"} about-item is-${column}`;
+          item.textContent = text;
+          aboutPanel.append(item);
+        });
+      }
+
+      function prepareAboutTextLetters() {
+        const items = aboutPanel.querySelectorAll(".contact-line, .contact-kicker");
+        state.aboutTextItems = [...items];
+        items.forEach((item) => {
+          if (item.dataset.aboutReady === "true") return;
+
+          const text = (item.textContent || "").trim();
+          item.dataset.aboutReady = "true";
+          const label = document.createElement("span");
+          label.className = "contact-text-label";
+          label.setAttribute("aria-hidden", "true");
+          const charNodes = [];
+
+          [...text].forEach((character) => {
+            const char = document.createElement("span");
+            char.className = `contact-text-char${character === " " ? " is-space" : ""}`;
+            char.textContent = character === " " ? "\u00a0" : character;
+            char.dataset.char = character;
+            label.append(char);
+            charNodes.push(char);
+          });
+
+          item.setAttribute("aria-label", text);
+          item.textContent = "";
+          item.append(label);
+          item._aboutChars = charNodes;
+        });
+      }
+
       function prepareContactTextLetters() {
         const items = contactPanel.querySelectorAll(".contact-line, .contact-kicker");
         state.contactTextItems = [...items];
@@ -3469,6 +3462,12 @@
         if (button._navChars) return button._navChars;
         button._navChars = [...button.querySelectorAll(".nav-button-char")];
         return button._navChars;
+      }
+
+      function getAboutTextChars(item) {
+        if (item._aboutChars) return item._aboutChars;
+        item._aboutChars = [...item.querySelectorAll(".contact-text-char")];
+        return item._aboutChars;
       }
 
       function getContactTextChars(item) {
@@ -3520,6 +3519,54 @@
         clearNodeStyleValue(node, "--fracture-rotate");
         clearNodeStyleValue(node, "--fracture-opacity");
         clearNodeStyleValue(node, "--fracture-blur");
+      }
+
+      function queueAboutIntroScramble() {
+        if (!state.aboutTextItems.length) return;
+
+        if (state.aboutIntroScrambleTimerId) {
+          window.clearTimeout(state.aboutIntroScrambleTimerId);
+          state.aboutIntroScrambleTimerId = 0;
+        }
+
+        if (state.aboutIntroScrambleRafId) {
+          window.cancelAnimationFrame(state.aboutIntroScrambleRafId);
+          state.aboutIntroScrambleRafId = 0;
+        }
+
+        state.aboutTextItems.forEach((item) => {
+          getAboutTextChars(item).forEach((char) => {
+            if (char.classList.contains("is-space")) return;
+            setNodeTextValue(char, char.dataset.char || "");
+          });
+        });
+
+        state.aboutIntroScrambleTimerId = window.setTimeout(() => {
+          state.aboutIntroScrambleTimerId = 0;
+          runAboutIntroScramble();
+        }, 120);
+      }
+
+      function runAboutIntroScramble() {
+        const groups = state.aboutTextItems
+          .map((item) => getAboutTextChars(item))
+          .filter((chars) => chars.length);
+
+        if (!groups.length) return;
+
+        state.aboutIntroScrambleRafId = scrambleCharacterGroups(groups, {
+          groupDelay: 56,
+          scrambleWindow: 300,
+          revealStep: 24,
+          revealDirection: "ltr",
+          initialStride: 4,
+          setFrameId: (frameId) => {
+            state.aboutIntroScrambleRafId = frameId;
+          },
+          onComplete: () => {
+            state.aboutIntroScrambleRafId = 0;
+          },
+        });
       }
 
       function queueContactIntroScramble() {
@@ -3575,8 +3622,10 @@
           groupDelay = 72,
           scrambleWindow = 360,
           revealStep = 28,
+          revealDirection = "auto",
           initialStride = 5,
           cycleStep = 34,
+          frameIntervalMs = 0,
           setFrameId = null,
           onComplete,
         } = {},
@@ -3586,7 +3635,7 @@
           .map((chars, groupIndex) => ({
             chars,
             revealStart: groupIndex * groupDelay,
-            revealRanks: getScrambleRevealRanks(chars),
+            revealRanks: getScrambleRevealRanks(chars, revealDirection),
             revealCount: chars.filter((char) => !char.classList.contains("is-space")).length,
           }));
 
@@ -3596,6 +3645,7 @@
         }
 
         const startedAt = performance.now();
+        let lastPaintAt = startedAt - frameIntervalMs;
 
         entries.forEach(({ chars }, groupIndex) => {
           chars.forEach((char, index) => {
@@ -3606,6 +3656,13 @@
         });
 
         const tick = (now) => {
+          if (frameIntervalMs > 0 && now - lastPaintAt < frameIntervalMs) {
+            const throttledFrameId = window.requestAnimationFrame(tick);
+            setFrameId?.(throttledFrameId);
+            return;
+          }
+
+          lastPaintAt = now;
           let doneCount = 0;
 
           entries.forEach(({ chars, revealStart, revealRanks, revealCount: totalRevealCount }) => {
@@ -3669,16 +3726,24 @@
         return firstFrameId;
       }
 
-      function getScrambleRevealRanks(chars) {
+      function getScrambleRevealRanks(chars, direction = "auto") {
         const nonSpaceChars = chars.filter((char) => !char.classList.contains("is-space"));
         const revealRanks = new Array(chars.length).fill(-1);
         if (!nonSpaceChars.length) return revealRanks;
 
-        const firstRect = nonSpaceChars[0].getBoundingClientRect();
-        const lastRect = nonSpaceChars[nonSpaceChars.length - 1].getBoundingClientRect();
-        const leftDistance = firstRect.left;
-        const rightDistance = window.innerWidth - lastRect.right;
-        const leftToRight = leftDistance <= rightDistance;
+        let leftToRight = true;
+
+        if (direction === "rtl") {
+          leftToRight = false;
+        } else if (direction === "ltr") {
+          leftToRight = true;
+        } else {
+          const firstRect = nonSpaceChars[0].getBoundingClientRect();
+          const lastRect = nonSpaceChars[nonSpaceChars.length - 1].getBoundingClientRect();
+          const leftDistance = firstRect.left;
+          const rightDistance = window.innerWidth - lastRect.right;
+          leftToRight = leftDistance <= rightDistance;
+        }
 
         let seen = 0;
         chars.forEach((char, index) => {
@@ -4325,64 +4390,21 @@
         }
 
         lizardState.walkCycle += lizardState.speed * 0.05;
-        const idleRelax = clampValue(
-          1 - Math.max(lizardState.speed / 1.25, distToTarget / 42),
-          0,
-          1,
-        );
-        const currentMaxBend = lerpValue(HOME_LIZARD_CONFIG.maxBend, 0.045, idleRelax);
-
         for (let index = 1; index < HOME_LIZARD_CONFIG.segments; index += 1) {
           const point = lizardState.points[index];
           const previous = lizardState.points[index - 1];
           const deltaX = previous.x - point.x;
           const deltaY = previous.y - point.y;
           let targetAngle = Math.atan2(deltaY, deltaX);
-          const straightenInfluence = clampValue(1 - index / (HOME_LIZARD_CONFIG.segments * 0.82), 0.2, 1);
-          const relaxedAngle = lerpAngle(targetAngle, head.angle, idleRelax * straightenInfluence * 0.28);
-          targetAngle = relaxedAngle;
           const diff = angleDiff(targetAngle, previous.angle);
 
-          if (Math.abs(diff) > currentMaxBend) {
-            targetAngle = previous.angle + Math.sign(diff) * currentMaxBend;
+          if (Math.abs(diff) > HOME_LIZARD_CONFIG.maxBend) {
+            targetAngle = previous.angle + Math.sign(diff) * HOME_LIZARD_CONFIG.maxBend;
           }
 
           point.angle = targetAngle;
           point.x = previous.x - Math.cos(point.angle) * HOME_LIZARD_CONFIG.segmentLength;
           point.y = previous.y - Math.sin(point.angle) * HOME_LIZARD_CONFIG.segmentLength;
-        }
-
-        if (idleRelax > 0.01) {
-          let axisX = 0;
-          let axisY = 0;
-          const rearStart = Math.max(HOME_LIZARD_CONFIG.backLegIndex - 2, 2);
-          const rearEnd = Math.min(HOME_LIZARD_CONFIG.backLegIndex + 5, HOME_LIZARD_CONFIG.segments - 2);
-
-          for (let index = rearStart; index <= rearEnd; index += 1) {
-            axisX += Math.cos(lizardState.points[index].angle);
-            axisY += Math.sin(lizardState.points[index].angle);
-          }
-
-          const rearAxis = Math.atan2(axisY, axisX);
-          const settleStrength = clampValue((idleRelax - 0.18) / 0.82, 0, 1);
-          for (let index = HOME_LIZARD_CONFIG.backLegIndex; index >= 1; index -= 1) {
-            const point = lizardState.points[index];
-            const previous = lizardState.points[index - 1];
-            const rearInfluence = clampValue(
-              1 - Math.abs(index - HOME_LIZARD_CONFIG.backLegIndex) / HOME_LIZARD_CONFIG.backLegIndex,
-              0.12,
-              1,
-            );
-            const blend = settleStrength * rearInfluence * 0.018;
-            const desiredPrevX =
-              point.x + Math.cos(rearAxis) * HOME_LIZARD_CONFIG.segmentLength;
-            const desiredPrevY =
-              point.y + Math.sin(rearAxis) * HOME_LIZARD_CONFIG.segmentLength;
-
-            previous.x = lerpValue(previous.x, desiredPrevX, blend);
-            previous.y = lerpValue(previous.y, desiredPrevY, blend);
-            previous.angle = lerpAngle(previous.angle, rearAxis, blend * 0.6);
-          }
         }
 
         for (let index = 0; index < HOME_LIZARD_CONFIG.segments; index += 1) {
@@ -4397,7 +4419,7 @@
             swayFactor = tailProgress * tailProgress * 1.8;
           }
 
-          const swayAmplitude = lizardState.speed * 0.4 * swayFactor * (1 - idleRelax * 0.94);
+          const swayAmplitude = lizardState.speed * 0.4 * swayFactor;
           const swayPhase = lizardState.walkCycle - index * 0.2;
           const swayOffset = Math.sin(swayPhase) * swayAmplitude;
 
@@ -5083,6 +5105,7 @@
 
         return brightness < lowerThreshold ? "light" : "dark";
       }
+
 
       function initializeProjectDial() {
         state.projectNodes = PROJECT_RING.map((entry) => {
