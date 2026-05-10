@@ -3,6 +3,7 @@ initializeAboutPanel();
 prepareNavButtonLetters();
 prepareAboutTextLetters();
 prepareContactTextLetters();
+initializePretext();
 initializeLizardCanvas();
 resizeContactDinoCanvas();
 contactDinoState.rafId = window.requestAnimationFrame(runContactDinoLoop);
@@ -18,7 +19,8 @@ window.addEventListener("resize", () => {
   updateContactRunnerHud();
   updateProjectDialLayout();
   updateNavButtonContrast(state.lastFrame);
-  updateProjectDial(true);
+  updateProjectDial();
+  schedulePretextLayout();
 });
 window.addEventListener("hashchange", syncNavigationFromHash);
 window.addEventListener("pointermove", handleLizardPointerMove, { passive: true });
@@ -38,6 +40,7 @@ if (document.fonts?.ready) {
     invalidateContactTextMetrics();
     updateHomeLizardAnchors();
     updateProjectDialLayout();
+    schedulePretextLayout();
     if (shouldKeepLizardLoopRunning()) {
       startLizardLoop();
     }

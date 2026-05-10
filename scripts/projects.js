@@ -45,7 +45,9 @@ function initializeProjectDial() {
   projectsDial.addEventListener("keydown", handleDialKeydown);
 
   updateProjectDialLayout();
-  updateProjectDial(true);
+  updateProjectDial();
+  schedulePretextLayout();
+  startProjectAutoRotateTimer();
 }
 
 function handleDialPointerDown(event) {
@@ -280,13 +282,12 @@ function runProjectOrbitLoop(timestamp) {
     : 0.016;
   state.projectOrbitLastAt = timestamp;
 
-  const canAnimateIntro =
-    state.activeSection === "projects" &&
+  const canAutoRotate =
+    projectsOrbit.classList.contains("is-visible") &&
     !state.isDialDragging &&
-    !state.wheelIdleTimer &&
     !projectsOrbit.classList.contains("is-wheel-scrolling");
 
-  if (canAnimateIntro && state.projectOrbitIntroToRotation !== state.projectOrbitIntroFromRotation) {
+  if (canAutoRotate && state.projectOrbitIntroToRotation !== state.projectOrbitIntroFromRotation) {
     if (!state.projectOrbitIntroStartAt) {
       state.projectOrbitIntroStartAt = timestamp;
     }
@@ -304,13 +305,34 @@ function runProjectOrbitLoop(timestamp) {
     if (progress >= 1) {
       cancelProjectDialTween();
     }
-  } else if (canAnimateIntro) {
-    projectsOrbit.classList.remove("is-auto-rotating");
+  } else if (canAutoRotate) {
+    state.dialRotation += dt * state.projectOrbitAutoRotateSpeed;
+    projectsOrbit.classList.add("is-auto-rotating");
+    updateProjectDial();
   } else {
     projectsOrbit.classList.remove("is-auto-rotating");
   }
 
   state.projectOrbitRafId = window.requestAnimationFrame(runProjectOrbitLoop);
+}
+
+function startProjectAutoRotateTimer() {
+  if (state.projectOrbitAutoRotateTimerId) return;
+
+  let lastTickAt = performance.now();
+  state.projectOrbitAutoRotateTimerId = window.setInterval(() => {
+    const now = performance.now();
+    const dt = Math.min(0.08, (now - lastTickAt) / 1000);
+    lastTickAt = now;
+
+    if (!projectsOrbit.classList.contains("is-visible")) return;
+    if (state.isDialDragging || projectsOrbit.classList.contains("is-wheel-scrolling")) return;
+    if (state.projectOrbitIntroToRotation !== state.projectOrbitIntroFromRotation) return;
+
+    state.dialRotation += dt * state.projectOrbitAutoRotateSpeed;
+    projectsOrbit.classList.add("is-auto-rotating");
+    updateProjectDial();
+  }, 33);
 }
 
 function markProjectDialInteraction(at = performance.now()) {

@@ -30,10 +30,10 @@ const stickerStage = document.querySelector("#sticker-stage");
 const stickerCard = document.querySelector("#sticker-card");
 const stickerImage = document.querySelector("#sticker-image");
 const workerCanvas = document.createElement("canvas");
-const workerContext = workerCanvas.getContext("2d");
 
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
 const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".m4v", ".ogv"];
+const PRETEXT_MODULE_URL = "https://esm.sh/@chenglou/pretext";
 const CONTACT_RUNNER_SPRITE_URL = "./200-offline-sprite.png";
 const CONTACT_RUNNER_BEST_SCORE_KEY = "contact-runner-best-score";
 const CONTACT_RUNNER_SPRITES = {
@@ -78,6 +78,8 @@ const PROJECTS = [
   { title: "nura.kr", homepage: "https://nura.kr" },
   { title: "NOT visionOS", homepage: "https://shimseunggi.github.io/NOT-visionOS/" },
   { title: "shimseunggi.kro.kr", homepage: "https://shimseunggi.kro.kr" },
+  { title: "AwA", homepage: "https://github.com/shimseunggi/AwA" },
+  { title: "iPod", homepage: "https://shimseunggi.github.io/iPod/" },
   { title: "comet logo", sticker: "sticker/comet.PNG" },
   { title: "rocket ha nyang", sticker: "sticker/ha-nyang.PNG" }
 ];
@@ -112,42 +114,6 @@ const ABOUT_CONTENT = [
   { type: "line", column: "right", text: "GJHS 36th" },
   { type: "line", column: "center", text: "2020 - 2022" },
   { type: "line", column: "right", text: "DAYDREAM 4th" },
-  { type: "line", column: "center", text: "" },
-  { type: "line", column: "center", text: "Devices" },
-  { type: "line", column: "right", text: "" },
-  { type: "line", column: "right", text: "" },
-  { type: "line", column: "center", text: "2026 - " },
-  { type: "line", column: "right", text: "MacBook Air M2 (13-inch)" },
-  { type: "line", column: "center", text: "2026 - 2026" },
-  { type: "line", column: "right", text: "MacBook Air M2 (13-inch)" },
-  { type: "line", column: "center", text: "2025 - 2025" },
-  { type: "line", column: "right", text: "MacBook Air M1 (13-inch)" },
-  { type: "line", column: "center", text: "2025 - " },
-  { type: "line", column: "right", text: "PS5" },
-  { type: "line", column: "center", text: "2025 - " },
-  { type: "line", column: "right", text: "Steam Deck" },
-  { type: "line", column: "center", text: "2025 - 2026" },
-  { type: "line", column: "right", text: "MacBook Air M2 (15-inch)" },
-  { type: "line", column: "center", text: "2025 - " },
-  { type: "line", column: "right", text: "Nintendo Switch" },
-  { type: "line", column: "center", text: "2024 - " },
-  { type: "line", column: "right", text: "Mac mini (M4)" },
-  { type: "line", column: "center", text: "2023 - " },
-  { type: "line", column: "right", text: "Nintendo Switch" },
-  { type: "line", column: "center", text: "2023 - " },
-  { type: "line", column: "right", text: "Galaxy book 4 pro" },
-  { type: "line", column: "center", text: "2023 - " },
-  { type: "line", column: "right", text: "iPhone 15 pro" },
-  { type: "line", column: "center", text: "2021 - 2023" },
-  { type: "line", column: "right", text: "iPhone XS" },
-  { type: "line", column: "center", text: "2019 - 2021" },
-  { type: "line", column: "right", text: "iPhone 8+" },
-  { type: "line", column: "center", text: "2018 - 2023" },
-  { type: "line", column: "right", text: "samsung notebook Pen" },
-  { type: "line", column: "center", text: "2015 - 2018" },
-  { type: "line", column: "right", text: "Galaxy J5 (2015)" },
-  { type: "line", column: "center", text: "2012 - " },
-  { type: "line", column: "right", text: "Nintendo DS lite" }
 ];
 
 const state = {
@@ -173,11 +139,13 @@ const state = {
   dragDistance: 0,
   wheelIdleTimer: 0,
   projectOrbitRafId: 0,
+  projectOrbitAutoRotateTimerId: 0,
   projectOrbitLastAt: 0,
   projectOrbitIntroStartAt: 0,
   projectOrbitIntroFromRotation: 0,
   projectOrbitIntroToRotation: 0,
   projectOrbitTweenDuration: 760,
+  projectOrbitAutoRotateSpeed: 3.6,
   lastProjectDialInteractionAt: 0,
   projectContrastSampleAt: 0,
   projectContrastInterval: 140,
@@ -194,6 +162,10 @@ const state = {
   contactIntroScrambleRafId: 0,
   contactIntroScrambleTimerId: 0,
   lizardSignalEffectEnabled: true,
+  pretextModule: null,
+  pretextLoading: false,
+  pretextReady: false,
+  pretextRafId: 0,
 };
 
 const HOME_LIZARD_CONFIG = {
@@ -583,18 +555,20 @@ function updateSectionPanels(previousSection = "") {
   }
   lizardState.visible = state.activeSection === "home";
   if (showProjects && previousSection !== "projects") {
-    state.lastProjectDialInteractionAt = performance.now() - 2600;
-    scheduleProjectDialTween(state.dialRotation + 3.2, 920);
+    cancelProjectDialTween();
+    state.projectOrbitLastAt = performance.now();
+    projectsOrbit.classList.add("is-auto-rotating");
   } else if (!showProjects) {
     cancelProjectDialTween();
     projectsOrbit.classList.remove("is-auto-rotating");
   }
   updateHomeLizardState(previousSection);
   updateContactDinoState(previousSection);
+  schedulePretextLayout();
 
   if (!showProjects) return;
 
-  updateProjectDial(true);
+  updateProjectDial();
 }
 
 function clampValue(value, min, max) {
@@ -766,6 +740,92 @@ function clearNodeStyleValue(node, property) {
   if (!node.__styleValueCache || !(property in node.__styleValueCache)) return;
   node.style.removeProperty(property);
   delete node.__styleValueCache[property];
+}
+
+async function initializePretext() {
+  if (state.pretextReady || state.pretextLoading) return;
+  if (!window.Intl?.Segmenter) return;
+
+  state.pretextLoading = true;
+
+  try {
+    state.pretextModule = await import(PRETEXT_MODULE_URL);
+    state.pretextReady = true;
+    schedulePretextLayout();
+  } catch (error) {
+    console.warn("Pretext failed to load; falling back to CSS text layout.", error);
+  } finally {
+    state.pretextLoading = false;
+  }
+}
+
+function schedulePretextLayout() {
+  if (!state.pretextReady || state.pretextRafId) return;
+
+  state.pretextRafId = window.requestAnimationFrame(() => {
+    state.pretextRafId = 0;
+    applyPretextLayout();
+  });
+}
+
+function getPretextSourceText(node) {
+  return (
+    node.dataset.pretextSource ||
+    node.getAttribute("aria-label") ||
+    node.textContent ||
+    ""
+  ).trim();
+}
+
+function getPretextFont(node) {
+  const style = window.getComputedStyle(node);
+  return style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+}
+
+function getPretextLineHeight(node) {
+  const style = window.getComputedStyle(node);
+  const parsed = Number.parseFloat(style.lineHeight);
+  if (Number.isFinite(parsed)) return parsed;
+
+  const fontSize = Number.parseFloat(style.fontSize);
+  return Number.isFinite(fontSize) ? fontSize * 1.2 : 16;
+}
+
+function measurePretextNode(node) {
+  const pretext = state.pretextModule;
+  if (!pretext?.prepareWithSegments || !pretext?.measureNaturalWidth) return;
+
+  const text = getPretextSourceText(node);
+  if (!text) return;
+
+  const rect = node.getBoundingClientRect();
+  const maxWidth = Math.max(1, Math.round(rect.width || node.clientWidth || window.innerWidth));
+  const prepared = pretext.prepareWithSegments(text, getPretextFont(node), {
+    wordBreak: "keep-all",
+  });
+  const naturalWidth = Math.ceil(pretext.measureNaturalWidth(prepared));
+  const stats = pretext.measureLineStats
+    ? pretext.measureLineStats(prepared, maxWidth)
+    : { lineCount: 1, maxLineWidth: naturalWidth };
+  const measuredWidth = Math.ceil(Math.max(stats.maxLineWidth || 0, naturalWidth));
+  const lineCount = Math.max(1, stats.lineCount || 1);
+
+  node.dataset.pretextLines = String(lineCount);
+  node.style.setProperty("--pretext-width", `${measuredWidth}px`);
+  node.style.setProperty("--pretext-lines", String(lineCount));
+  node.style.setProperty("--pretext-line-height", `${getPretextLineHeight(node).toFixed(3)}px`);
+  node.classList.add("is-pretext-ready");
+}
+
+function applyPretextLayout() {
+  if (!state.pretextReady) return;
+
+  [
+    ...navButtons,
+    ...state.aboutTextItems,
+    ...state.contactTextItems,
+    ...document.querySelectorAll(".projects-node-title"),
+  ].forEach(measurePretextNode);
 }
 
 function getStaticCharValue(node) {
@@ -1267,6 +1327,11 @@ function cleanupSource() {
   if (state.projectOrbitRafId) {
     window.cancelAnimationFrame(state.projectOrbitRafId);
     state.projectOrbitRafId = 0;
+  }
+
+  if (state.projectOrbitAutoRotateTimerId) {
+    window.clearInterval(state.projectOrbitAutoRotateTimerId);
+    state.projectOrbitAutoRotateTimerId = 0;
   }
 
   if (state.sourceType === "video" && state.source) {
